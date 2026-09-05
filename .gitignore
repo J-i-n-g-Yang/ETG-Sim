@@ -1,0 +1,38 @@
+# Python virtual environments
+venv/
+.venv/
+
+# Python generated files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# macOS
+.DS_Store
+**/.DS_Store
+
+# Environment / secrets
+.env
+.env.*
+!.env.example
+
+# Logs / test output
+*.log
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Local SQLite runtime database
+data/*.db
+data/*.db-shm
+data/*.db-wal
+data/*.db*
+
+# IDE/editor
+.vscode/
+.idea/
+
+# Temporary files
+*.tmp
+*.swp
+*~

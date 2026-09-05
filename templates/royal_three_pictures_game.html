@@ -1,0 +1,249 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{{ game_name }} · ETG Sim</title>
+<style>
+:root{--bg:#04110c;--panel:#071a13;--felt:#075332;--felt2:#09683e;--gold:#d5a72c;--gold2:#f4dc83;--text:#f7f4e7;--muted:#a8b9aa;--red:#a52b27;--black:#151817}
+*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(circle at 50% 0,#0b4329,#020b08 72%);color:var(--text);font-family:Georgia,"Times New Roman",serif}
+.shell{min-height:100vh;padding:14px}
+.top{display:grid;grid-template-columns:150px 1fr 590px;gap:16px;align-items:start}
+.portal,.reset{border:1px solid #a27d24;border-radius:10px;padding:13px;background:#06150f;color:#fff;text-decoration:none;font-weight:700}
+.game-title{font-size:32px;color:var(--gold2);font-weight:900;letter-spacing:.04em}
+.ready{font-size:12px;border:1px solid #967821;border-radius:999px;padding:7px 14px;margin-left:12px}
+.balance{text-align:center;color:var(--gold2);font-size:14px}
+.balance strong{display:block;font-size:28px}
+.chipbar{display:flex;gap:8px;justify-content:flex-end;margin-top:8px}
+.chip{width:58px;height:58px;border-radius:50%;border:3px dashed #eee;color:#fff;font-weight:900;cursor:pointer}
+.chip.active{outline:3px solid var(--gold)}
+.main{display:grid;grid-template-columns:150px minmax(900px,1fr);gap:12px;margin-top:12px}
+.side{display:flex;flex-direction:column;gap:10px}
+.panel{background:#06150fdd;border:1px solid #7d6520;border-radius:10px;padding:12px}
+.metric{padding:10px 0;border-bottom:1px solid #ffffff15}
+.metric:last-child{border:0}
+.metric small{display:block;color:#ddd}
+.metric strong{font-size:20px}
+.net{color:#65ef8a}
+.history{min-height:210px;font-family:system-ui,sans-serif;font-size:12px;color:#b7c4ba}
+.center{min-width:0}
+.table{background:linear-gradient(145deg,#08613a,#043d25);border:3px solid #aa8426;border-radius:30px;padding:18px;box-shadow:0 14px 30px #0008;min-height:650px}
+.dealer{text-align:center;border-bottom:1px solid #d5a72c55;padding-bottom:20px;margin-bottom:20px}
+.zone-title{color:var(--gold2);font-weight:900;letter-spacing:.08em;font-size:13px}
+.hand-label{margin-top:7px;color:#fff;font-weight:900}
+.cards{display:flex;gap:7px;justify-content:center;align-items:center;min-height:112px;margin-top:8px}
+.card{
+  position:relative;
+  width:74px;
+  height:108px;
+  flex:0 0 74px;
+
+  border-radius:8px;
+  background:
+    linear-gradient(
+      145deg,
+      #ffffff,
+      #f3f1eb
+    );
+
+  color:#111;
+
+  border:2px solid #d8d8d8;
+
+  box-shadow:
+    0 5px 10px #0007,
+    inset 0 0 0 1px #ffffff;
+
+  font-family:
+    Georgia,
+    "Times New Roman",
+    serif;
+
+  font-weight:900;
+
+  overflow:hidden;
+}
+
+.card.red{
+  color:#b21f24;
+}
+
+.card-corner{
+  position:absolute;
+  left:7px;
+  top:5px;
+
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+
+  line-height:.88;
+}
+
+.card-rank{
+  font-size:22px;
+  line-height:1;
+}
+
+.card-suit{
+  margin-top:3px;
+  font-size:17px;
+  line-height:1;
+}
+
+.card-center{
+  position:absolute;
+  left:50%;
+  top:53%;
+
+  transform:
+    translate(-50%,-50%);
+
+  font-size:34px;
+  line-height:1;
+}
+
+.card.back{
+  background:
+    repeating-linear-gradient(
+      45deg,
+      #132a62,
+      #132a62 7px,
+      #244590 7px,
+      #244590 14px
+    );
+
+  border:4px solid #eee;
+
+  box-shadow:
+    0 5px 10px #0008,
+    inset 0 0 0 2px #172654;
+}
+
+.card.back::after{
+  content:"ETG";
+
+  position:absolute;
+  left:50%;
+  top:50%;
+
+  transform:
+    translate(-50%,-50%);
+
+  color:#f2d46c;
+  font-size:13px;
+  letter-spacing:.08em;
+}
+.seats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.seat{position:relative;background:#052d1d99;border:1px solid #c59c31;border-radius:18px;padding:12px;min-height:390px}
+.seat.active-seat{box-shadow:inset 0 0 0 2px #f1d36b,0 0 18px #d5a72c55}
+.seat-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.seat-name{font-weight:900;color:var(--gold2)}
+.blind-tag{font-family:system-ui,sans-serif;font-size:10px;padding:3px 7px;border:1px solid #b88d28;border-radius:999px;color:#e7d28b}
+.hand-summary{text-align:center;min-height:42px;font-family:system-ui,sans-serif;font-size:12px;color:#ddd}
+.bet-grid{display:grid;grid-template-columns:1fr;gap:6px;margin-top:8px}
+.bet{position:relative;min-height:54px;border:1px solid #b18d2d;border-radius:8px;background:#075332;color:#fff;padding:7px;text-align:center;cursor:pointer}
+.bet:hover{background:#0a6d43}
+.bet strong{display:block}
+.bet small{color:#eadc8a}
+.bet-badge{position:absolute;right:4px;top:4px;background:#d4af37;color:#111;border-radius:99px;padding:2px 6px;font:900 10px Arial}
+.actionbar{display:grid;grid-template-columns:1fr 190px 310px;gap:8px;background:#07140f;padding:10px;border-radius:0 0 16px 16px;border:1px solid #755e1d}
+.actionbar button{padding:14px;border-radius:8px;border:1px solid #777;font-weight:900}
+.clear{background:#181b1b;color:#ddd}
+.deal{background:linear-gradient(#e4b53d,#a9750b);color:#fff;font-size:18px}
+.rules{margin-top:8px;border:1px solid #a37c20;border-radius:10px;padding:12px;background:#06351f}
+.rules h3{text-align:center;color:var(--gold2);margin:0 0 8px}
+.rules-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;font-family:system-ui,sans-serif;font-size:12px}
+.result-win{color:#72ef91}.result-lose{color:#ff8c8c}.result-push{color:#f4dc83}
+@media(max-width:1200px){.top{grid-template-columns:120px 1fr}.top-right{grid-column:1/-1}.main{grid-template-columns:120px 1fr}.chipbar{justify-content:center}.seats{grid-template-columns:1fr}.rules-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="shell">
+<div class="top">
+<a class="portal" href="{{ url_for('portal') }}">← PORTAL</a>
+<div><span class="game-title">{{ game_icon }} {{ game_name|upper }}</span><span class="ready" id="phaseLabel">READY</span></div>
+<div class="top-right">
+<div class="balance">BALANCE<strong id="balanceDisplay">0</strong></div>
+<div class="chipbar" id="chipBar"></div>
+</div>
+</div>
+
+<div class="main">
+<aside class="side">
+<div class="panel">
+<div class="metric"><small>ACTIVE HANDS</small><strong id="activeMetric">0</strong></div>
+<div class="metric"><small>TOTAL STAKE</small><strong id="stakeMetric">0</strong></div>
+<div class="metric"><small>TOTAL RETURN</small><strong id="returnMetric">0</strong></div>
+<div class="metric"><small>NET WIN</small><strong class="net" id="netMetric">0</strong></div>
+</div>
+<div class="panel history"><b>ROUND HISTORY</b><div id="history">No rounds yet</div></div>
+</aside>
+
+<section class="center">
+<div class="table">
+<div class="dealer">
+<div class="zone-title">BANKER</div>
+<div class="cards" id="dealerCards"></div>
+<div class="hand-label" id="dealerSummary">Waiting for deal</div>
+</div>
+
+<div class="seats">
+{% for seat in range(3) %}
+<div class="seat" id="seat{{ seat }}">
+<div class="seat-head">
+<div class="seat-name">HAND {{ seat + 1 }}</div>
+<div class="blind-tag">{{ "VIEWED" if seat == 0 else "BLIND" }}</div>
+</div>
+<div class="cards" id="seat{{ seat }}Cards"></div>
+<div class="hand-summary" id="seat{{ seat }}Summary">Place a Main wager to activate</div>
+<div class="bet-grid">
+<div class="bet" data-seat="{{ seat }}" data-wager="main"><strong>MAIN</strong><small>Win · 1:1 · Player 6 pays 1:2</small></div>
+<div class="bet" data-seat="{{ seat }}" data-wager="tie"><strong>TIE</strong><small>Equal point totals · 8:1</small></div>
+<div class="bet" data-seat="{{ seat }}" data-wager="royal_pictures"><strong>ROYAL PICTURES</strong><small>King / Picture combinations</small></div>
+</div>
+</div>
+{% endfor %}
+</div>
+</div>
+
+<div class="actionbar">
+<div>ON TABLE<br><strong id="pendingTotal">0</strong></div>
+<button class="clear" id="clearBtn">✕ CLEAR BETS</button>
+<button class="deal" id="dealBtn" disabled>🂠 DEAL</button>
+</div>
+
+<div class="rules">
+<h3>ROYAL THREE PICTURES RULES</h3>
+<div class="rules-grid">
+<div>
+<b>Main</b><br>
+Higher point total wins. At equal points, more Pictures wins. Equal points + equal Picture count is a Standoff.<br><br>
+Normal win pays 1:1. A winning Player 6 pays 1:2.
+</div>
+<div>
+<b>Tie · 8:1</b><br>
+Wins whenever Player and Banker have equal point totals. Picture count does not affect the Tie wager.<br><br>
+A=1, 2–9 face value, 10/J/Q/K=0.
+</div>
+<div>
+<b>Royal Pictures</b><br>
+Three Kings 188:1 · Three Queens 128:1 · Three Jacks 88:1 · Three Pictures 18:1 · Picture Pair 8:1 · Any King 1:1.
+</div>
+</div>
+</div>
+</section>
+</div>
+
+<button class="reset" id="resetBtn" style="position:fixed;right:14px;top:14px">↻ RESET CREDITS</button>
+</div>
+
+<script>
+window.RTP_GAME = {{ game|tojson }};
+window.RTP_MAX = {{ max_bet|tojson }};
+window.RTP_START = {{ starting_credits|tojson }};
+</script>
+<script src="{{ url_for('static', filename='js/royal_three_pictures_solo.js') }}?v={{ static_v|default('1') }}"></script>
+</body>
+</html>

@@ -1,0 +1,309 @@
+/* animations.css — cinematic game result animations shared between
+   the projector view and the solo game table.
+   All class names are .proj-* so nothing conflicts with the board CSS. */
+
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&display=swap');
+
+/* ------------------------------------------------------------------ */
+/* Shared animation container                                           */
+/* ------------------------------------------------------------------ */
+.anim-area {
+  min-height: 260px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 16px 0 20px;
+  overflow: hidden;
+}
+
+/* Felt texture data-URI used by all three table types */
+.felt-tex::before {
+  content: '';
+  position: absolute; inset: 0;
+  border-radius: inherit;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='3' height='3'%3E%3Ccircle cx='1' cy='1' r='0.5' fill='rgba(255,255,255,0.03)'/%3E%3C/svg%3E");
+  pointer-events: none;
+}
+
+/* ================================================================== */
+/* BACCARAT                                                            */
+/* ================================================================== */
+.proj-baccarat-table {
+  position: relative;
+  width: 100%;
+  max-width: 680px;
+  border-radius: 100px / 50px;
+  background:
+    radial-gradient(ellipse 80% 90% at 50% 50%, #1a6035 0%, #0f3d22 50%, #081e10 100%);
+  border: 5px solid #8b6020;
+  box-shadow:
+    inset 0 0 50px rgba(0,0,0,0.4),
+    0 0 0 8px rgba(40,25,5,0.8),
+    0 8px 36px rgba(0,0,0,0.7);
+  padding: 28px 36px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  overflow: hidden;
+}
+.proj-baccarat-table::before {
+  content: '';
+  position: absolute; inset: 0;
+  border-radius: inherit;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='3' height='3'%3E%3Ccircle cx='1' cy='1' r='0.5' fill='rgba(255,255,255,0.03)'/%3E%3C/svg%3E");
+  pointer-events: none;
+}
+.proj-baccarat-table::after {
+  content: '';
+  position: absolute; inset: 8px;
+  border-radius: 92px / 42px;
+  border: 1.5px solid rgba(200,160,60,0.22);
+  pointer-events: none;
+}
+
+.proj-hand { position: relative; z-index: 1; text-align: center; }
+.proj-hand-label {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em;
+  font-weight: 700; margin-bottom: 10px;
+}
+.proj-hand-label.player { color: #7ab8ff; }
+.proj-hand-label.banker { color: #ff8080; }
+.proj-hand-score {
+  font-family: 'Playfair Display', serif;
+  font-size: 36px; font-weight: 700;
+  margin-bottom: 10px; line-height: 1;
+  transition: color 0.2s;
+}
+.proj-hand-score.player { color: #7ab8ff; }
+.proj-hand-score.banker { color: #ff8080; }
+
+@keyframes scoreBump {
+  0%   { transform: scale(1.0); }
+  40%  { transform: scale(1.22); }
+  100% { transform: scale(1.0); }
+}
+.score-bump { animation: scoreBump 0.35s cubic-bezier(0.2,0.8,0.3,1); }
+.proj-cards { display: flex; gap: 8px; justify-content: center; }
+
+/* ---- Cards ---- */
+.proj-card {
+  width: 72px; height: 102px;
+  border-radius: 10px;
+  background: #fffdf5;
+  box-shadow: 0 5px 20px rgba(0,0,0,0.55), 0 1px 3px rgba(0,0,0,0.3);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 3px;
+  position: relative;
+  border: 1px solid rgba(0,0,0,0.12);
+  flex-shrink: 0;
+}
+.proj-card::after {
+  content: '';
+  position: absolute; inset: 4px;
+  border-radius: 7px;
+  border: 1px solid rgba(0,0,0,0.06);
+  pointer-events: none;
+}
+.proj-card.red   { color: #cc2020; }
+.proj-card.black { color: #111; }
+.proj-card.face-card { background: linear-gradient(135deg, #fffdf5 0%, #f0e8d8 100%); }
+
+@keyframes cardDealIn {
+  0%   { opacity: 0; transform: translateY(-20px) scale(0.88); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+.proj-card.deal-in, .proj-winner-badge.deal-in {
+  opacity: 0;
+  animation: cardDealIn 0.42s cubic-bezier(0.2,0.8,0.3,1) forwards;
+}
+
+.card-rank {
+  font-size: 30px; font-weight: 900;
+  line-height: 1; letter-spacing: -0.03em;
+}
+.card-suit-lg { font-size: 23px; line-height: 1; }
+
+/* ---- Winner badge ---- */
+.proj-winner-badge {
+  font-family: 'Playfair Display', serif;
+  font-size: 20px; font-weight: 800;
+  padding: 12px 20px; border-radius: 12px;
+  background: rgba(0,0,0,0.3);
+  border: 2px solid #d4af37;
+  color: #f4e5a3;
+  text-shadow: 0 0 16px rgba(240,200,80,0.5);
+  backdrop-filter: blur(4px);
+  white-space: nowrap;
+  position: relative; z-index: 1;
+}
+.proj-winner-badge.player { color: #7ab8ff; border-color: #4a90d9; box-shadow: 0 0 24px rgba(74,144,217,0.3); }
+.proj-winner-badge.banker { color: #ff8080; border-color: #d94a4a; box-shadow: 0 0 24px rgba(217,74,74,0.3); }
+.proj-winner-badge.tie    { color: #6dff9b; border-color: #2db85a; box-shadow: 0 0 24px rgba(45,184,90,0.3); }
+
+/* ================================================================== */
+/* ROULETTE                                                             */
+/* ================================================================== */
+.proj-roulette-wrap {
+  width: 100%;
+  max-width: 680px;
+  border-radius: 20px;
+  background:
+    radial-gradient(ellipse 100% 100% at 50% 50%, #1a6035 0%, #0f3d22 50%, #081e10 100%);
+  border: 5px solid #8b6020;
+  box-shadow:
+    inset 0 0 50px rgba(0,0,0,0.35),
+    0 0 0 8px rgba(40,25,5,0.8),
+    0 8px 36px rgba(0,0,0,0.7);
+  padding: 28px 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 36px;
+  position: relative;
+  overflow: hidden;
+}
+.proj-roulette-wrap::before {
+  content: '';
+  position: absolute; inset: 0;
+  border-radius: inherit;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='3' height='3'%3E%3Ccircle cx='1' cy='1' r='0.5' fill='rgba(255,255,255,0.03)'/%3E%3C/svg%3E");
+  pointer-events: none;
+}
+
+#animWheelCanvas {
+  border-radius: 50%;
+  box-shadow: 0 6px 28px rgba(0,0,0,0.6), 0 0 0 3px #8b6020;
+  flex-shrink: 0;
+  position: relative; z-index: 1;
+}
+
+.proj-roulette-result {
+  text-align: center;
+  position: relative; z-index: 1;
+}
+.proj-roulette-number {
+  font-family: 'Playfair Display', serif;
+  font-size: 56px; font-weight: 800;
+  width: 96px; height: 96px; line-height: 96px;
+  border-radius: 50%; margin: 0 auto 8px; color: #fff;
+  box-shadow: 0 4px 18px rgba(0,0,0,0.5);
+}
+.proj-roulette-result.red   .proj-roulette-number { background: radial-gradient(circle at 35% 35%, #e84444, #9a1c1c); }
+.proj-roulette-result.black .proj-roulette-number { background: radial-gradient(circle at 35% 35%, #333, #111); border: 2px solid #555; }
+.proj-roulette-result.green .proj-roulette-number { background: radial-gradient(circle at 35% 35%, #2db85a, #0d6b1e); }
+.proj-roulette-label {
+  font-size: 12px; letter-spacing: 0.12em; font-weight: 600;
+  color: #8a97a5; text-transform: uppercase;
+}
+.proj-lightning-badge {
+  margin-top: 8px;
+  font-size: 16px; font-weight: 800;
+  color: #ffe066;
+  text-shadow: 0 0 16px rgba(255,200,0,0.6);
+  letter-spacing: 0.05em;
+}
+
+/* ================================================================== */
+/* SIC BO                                                               */
+/* ================================================================== */
+.proj-sicbo-wrap {
+  width: 100%;
+  max-width: 680px;
+  border-radius: 20px;
+  background:
+    radial-gradient(ellipse 100% 100% at 50% 50%, #1a6035 0%, #0f3d22 55%, #081e10 100%);
+  border: 5px solid #8b6020;
+  box-shadow:
+    inset 0 0 50px rgba(0,0,0,0.35),
+    0 0 0 8px rgba(40,25,5,0.8),
+    0 8px 36px rgba(0,0,0,0.7);
+  padding: 36px 48px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+  position: relative;
+  overflow: hidden;
+}
+.proj-sicbo-wrap::before {
+  content: '';
+  position: absolute; inset: 0;
+  border-radius: inherit;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='3' height='3'%3E%3Ccircle cx='1' cy='1' r='0.5' fill='rgba(255,255,255,0.03)'/%3E%3C/svg%3E");
+  pointer-events: none;
+}
+
+.proj-dice {
+  display: flex; gap: 24px;
+  perspective: 1000px;
+  position: relative; z-index: 1;
+}
+.proj-die { width: 80px; height: 80px; }
+.proj-die-inner {
+  width: 100%; height: 100%;
+  position: relative;
+  transform-style: preserve-3d;
+}
+.die-face {
+  position: absolute; width: 80px; height: 80px;
+  background: linear-gradient(135deg, #fffdf5 0%, #ede8d0 100%);
+  border-radius: 14px;
+  box-shadow: inset 0 0 0 2px rgba(0,0,0,0.08), inset 0 2px 4px rgba(255,255,255,0.8);
+  display: grid; padding: 8px;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+}
+.die-face.front  { transform: translateZ(40px); }
+.die-face.back   { transform: rotateY(180deg) translateZ(40px); }
+.die-face.right  { transform: rotateY(90deg) translateZ(40px); }
+.die-face.left   { transform: rotateY(-90deg) translateZ(40px); }
+.die-face.top    { transform: rotateX(90deg) translateZ(40px); }
+.die-face.bottom { transform: rotateX(-90deg) translateZ(40px); }
+
+.die-dot {
+  width: 12px; height: 12px; border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #444, #111);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.3);
+  align-self: center; justify-self: center;
+}
+
+.proj-sicbo-result {
+  font-size: 18px; color: #e9edf1;
+  position: relative; z-index: 1;
+}
+.proj-sicbo-result b {
+  font-family: 'Playfair Display', serif;
+  font-size: 26px; color: #f4e5a3;
+}
+.triple-badge {
+  color: #f4e5a3; font-weight: 800;
+  text-shadow: 0 0 18px rgba(240,200,80,0.5);
+  animation: pulse 0.8s ease-in-out infinite alternate;
+}
+@keyframes pulse {
+  from { opacity: 0.7; }
+  to   { opacity: 1; }
+}
+
+/* ---- History pip dice (reused in solo history strip too) ---- */
+.hist-die {
+  width: 32px; height: 32px;
+  border-radius: 7px;
+  background: linear-gradient(135deg, #fffdf5 0%, #ede8d0 100%);
+  box-shadow: 0 2px 5px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(0,0,0,0.1);
+  display: grid !important;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+  padding: 4px;
+  flex-shrink: 0;
+}
+.hist-die-dot {
+  width: 100%; height: 100%;
+  max-width: 6px; max-height: 6px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #444, #0e0e0e);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.35);
+  align-self: center; justify-self: center;
+}

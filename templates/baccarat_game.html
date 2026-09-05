@@ -1,0 +1,2991 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+<meta charset="UTF-8">
+
+<meta
+  name="viewport"
+  content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"
+>
+
+<title>{{ game_name }} · ETG Sim</title>
+
+<style>
+
+/* ================================================================
+   ROOT
+   ================================================================ */
+
+:root{
+  --bg:#04110c;
+  --panel:#071a13;
+
+  --felt:#064d2c;
+  --felt2:#08703d;
+
+  --gold:#d5a72c;
+  --gold2:#f4dc83;
+
+  --text:#f7f4e7;
+  --muted:#a8b9aa;
+
+  --player:#4fa7ff;
+  --banker:#ef4f55;
+  --tie:#4fc86c;
+
+  --win:#65ef8a;
+  --lose:#ff8c8c;
+  --push:#f4dc83;
+
+  --road-bg:#f5f2e9;
+  --road-grid:#c9c9c9;
+  --road-text:#202020;
+
+  --dragon:#c83f34;
+  --dragon-dark:#8b251e;
+  --tiger:#c49b25;
+  --tiger-dark:#806515;
+  --immortal:#9d58cf;
+  --rising:#e7772f;
+}
+
+*{
+  box-sizing:border-box;
+}
+
+html,
+body{
+  margin:0;
+  min-height:100%;
+}
+
+body{
+  min-height:100vh;
+  overflow-x:hidden;
+
+  background:
+    radial-gradient(
+      circle at 50% 0,
+      #0b4329,
+      #020b08 70%
+    );
+
+  color:var(--text);
+
+  font-family:
+    Georgia,
+    "Times New Roman",
+    serif;
+}
+
+button{
+  font:inherit;
+}
+
+
+/* ================================================================
+   SHELL
+   ================================================================ */
+
+.shell{
+  min-height:100vh;
+  padding:14px;
+}
+
+
+/* ================================================================
+   HEADER
+   ================================================================ */
+
+.top{
+  display:grid;
+
+  grid-template-columns:
+    150px
+    1fr
+    590px;
+
+  gap:16px;
+
+  align-items:start;
+}
+
+.portal,
+.reset-btn{
+  border:1px solid #a27d24;
+
+  border-radius:10px;
+
+  padding:13px;
+
+  background:#06150f;
+
+  color:#fff;
+
+  text-decoration:none;
+
+  font-weight:700;
+
+  cursor:pointer;
+}
+
+.portal:hover,
+.reset-btn:hover{
+  border-color:var(--gold2);
+  filter:brightness(1.12);
+}
+
+.game-title{
+  font-size:34px;
+
+  color:var(--gold2);
+
+  font-weight:900;
+
+  letter-spacing:.04em;
+}
+
+.ready{
+  display:inline-flex;
+
+  align-items:center;
+  justify-content:center;
+
+  min-width:74px;
+
+  margin-left:12px;
+
+  padding:7px 14px;
+
+  border:1px solid #967821;
+
+  border-radius:999px;
+
+  color:#fff3b0;
+
+  font-size:12px;
+}
+
+.top-right{
+  display:flex;
+
+  justify-content:flex-end;
+  align-items:flex-start;
+
+  gap:12px;
+}
+
+.balance{
+  text-align:center;
+
+  color:var(--gold2);
+
+  font-size:14px;
+}
+
+.balance strong{
+  display:block;
+  font-size:28px;
+}
+
+.chipbar{
+  display:flex;
+
+  gap:8px;
+
+  justify-content:flex-end;
+
+  margin-top:8px;
+}
+
+.chip{
+  width:58px;
+  height:58px;
+
+  flex:0 0 58px;
+
+  display:flex;
+
+  align-items:center;
+  justify-content:center;
+
+  border:3px dashed #eee;
+
+  border-radius:50%;
+
+  color:#fff;
+
+  font-family:Arial,sans-serif;
+
+  font-size:11px;
+
+  font-weight:900;
+
+  cursor:pointer;
+
+  user-select:none;
+
+  transition:
+    transform .12s ease,
+    filter .12s ease;
+}
+
+.chip:hover{
+  transform:translateY(-2px);
+  filter:brightness(1.15);
+}
+
+.chip.active{
+  outline:3px solid var(--gold);
+  outline-offset:2px;
+}
+
+.max-bet-note{
+  margin-top:6px;
+
+  color:var(--muted);
+
+  text-align:right;
+
+  font-family:system-ui,sans-serif;
+
+  font-size:10px;
+}
+
+
+/* ================================================================
+   MAIN GRID
+   ================================================================ */
+
+.main{
+  display:grid;
+
+  grid-template-columns:
+    170px
+    minmax(800px,1fr);
+
+  gap:12px;
+
+  margin-top:12px;
+}
+
+.side{
+  display:flex;
+
+  flex-direction:column;
+
+  gap:10px;
+}
+
+.center{
+  min-width:0;
+}
+
+
+/* ================================================================
+   SIDEBAR
+   ================================================================ */
+
+.panel{
+  padding:12px;
+
+  border:1px solid #7d6520;
+
+  border-radius:10px;
+
+  background:#06150fdd;
+}
+
+.metric{
+  padding:10px 0;
+
+  border-bottom:1px solid #ffffff15;
+}
+
+.metric:last-child{
+  border:0;
+}
+
+.metric small{
+  display:block;
+  color:#ddd;
+}
+
+.metric strong{
+  display:block;
+
+  margin-top:2px;
+
+  font-size:20px;
+}
+
+.metric-value.win,
+.win{
+  color:var(--win);
+}
+
+.metric-value.lose,
+.lose{
+  color:var(--lose);
+}
+
+.metric-value.push,
+.push{
+  color:var(--push);
+}
+
+
+/* ================================================================
+   ROUND HISTORY
+   ================================================================ */
+
+.history{
+  min-height:210px;
+
+  color:#b7c4ba;
+
+  font-family:system-ui,sans-serif;
+
+  font-size:12px;
+}
+
+.history-list{
+  display:flex;
+
+  gap:5px;
+
+  flex-wrap:wrap;
+
+  margin-top:10px;
+}
+
+.hb{
+  display:inline-flex;
+
+  align-items:center;
+  justify-content:center;
+
+  min-width:26px;
+  height:24px;
+
+  padding:2px 7px;
+
+  border:1px solid currentColor;
+
+  border-radius:12px;
+
+  font-size:10px;
+
+  font-weight:900;
+}
+
+.hb.player{
+  color:var(--player);
+}
+
+.hb.banker{
+  color:var(--banker);
+}
+
+.hb.tie{
+  color:var(--tie);
+}
+
+
+/* ================================================================
+   STATUS
+   ================================================================ */
+
+.status-bar{
+  min-height:38px;
+
+  margin-bottom:8px;
+
+  padding:10px 13px;
+
+  border:1px solid #7d6520;
+
+  border-radius:9px;
+
+  background:#06150fdd;
+
+  font-family:system-ui,sans-serif;
+
+  font-size:12px;
+}
+
+.status-bar.good{
+  border-color:#287c49;
+  color:#8ef0a8;
+}
+
+.status-bar.bad{
+  border-color:#913d3d;
+  color:#ff9b9b;
+}
+
+.status-bar.warn,
+.status-bar.playing{
+  border-color:#c39a32;
+  color:#fff0a4;
+}
+
+
+/* ================================================================
+   BACCARAT TABLE
+   ================================================================ */
+
+.bacc-table{
+  position:relative;
+
+  min-height:600px;
+
+  padding:22px;
+
+  border:3px solid #a98427;
+
+  border-radius:30px;
+
+  background:
+    radial-gradient(
+      circle at 50% 20%,
+      #08703d,
+      #043f25 75%
+    );
+
+  box-shadow:
+    0 14px 30px #0008;
+}
+
+
+/* ================================================================
+   CARD ZONE
+   ================================================================ */
+
+.card-zone{
+  display:grid;
+
+  grid-template-columns:
+    1fr
+    1fr;
+
+  border-bottom:
+    2px solid #d5a72c55;
+
+  padding-bottom:18px;
+}
+
+.card-hand{
+  position:relative;
+
+  min-height:210px;
+
+  padding:8px 16px;
+
+  text-align:center;
+}
+
+.card-hand:first-child{
+  border-right:
+    1px solid #d5a72c55;
+}
+
+.hand-name{
+  font-size:18px;
+
+  font-weight:900;
+
+  letter-spacing:.08em;
+}
+
+.hand-name.player{
+  color:var(--player);
+}
+
+.hand-name.banker{
+  color:var(--banker);
+}
+
+.score{
+  min-height:28px;
+
+  margin-top:4px;
+
+  color:#fff0aa;
+
+  font-size:24px;
+
+  font-weight:900;
+}
+
+.cards{
+  min-height:112px;
+
+  display:flex;
+
+  align-items:center;
+  justify-content:center;
+
+  gap:8px;
+
+  flex-wrap:wrap;
+
+  margin-top:8px;
+}
+
+
+/* ================================================================
+   CARDS
+   ================================================================ */
+
+.card{
+  width:72px;
+  height:102px;
+
+  flex:0 0 72px;
+
+  display:flex;
+
+  flex-direction:column;
+
+  justify-content:space-between;
+
+  padding:7px;
+
+  border:2px solid #ddd;
+
+  border-radius:8px;
+
+  background:#f7f3df;
+
+  color:#111;
+
+  box-shadow:
+    0 5px 10px #0008;
+
+  font-family:Arial,sans-serif;
+
+  font-size:22px;
+
+  font-weight:900;
+}
+
+.card.red{
+  color:#b22020;
+}
+
+.card .rank{
+  font-size:22px;
+  text-align:left;
+}
+
+.card .suit{
+  text-align:right;
+  font-size:25px;
+}
+
+
+/* ================================================================
+   DEAL ANIMATION
+   ================================================================ */
+
+@keyframes baccDealIn{
+  0%{
+    opacity:0;
+
+    transform:
+      translate(90px,-80px)
+      rotate(8deg)
+      scale(.78);
+  }
+
+  70%{
+    opacity:1;
+
+    transform:
+      translate(-3px,3px)
+      rotate(-1deg)
+      scale(1.03);
+  }
+
+  100%{
+    opacity:1;
+    transform:none;
+  }
+}
+
+.card.deal-in{
+  animation:
+    baccDealIn
+    .34s
+    cubic-bezier(.2,.8,.3,1)
+    both;
+}
+
+
+/* ================================================================
+   WINNER
+   ================================================================ */
+
+.winner{
+  min-height:34px;
+
+  margin:12px 0 4px;
+
+  text-align:center;
+
+  font-family:system-ui,sans-serif;
+
+  font-size:18px;
+
+  font-weight:900;
+}
+
+.winner.player{
+  color:var(--player);
+}
+
+.winner.banker{
+  color:var(--banker);
+}
+
+.winner.tie{
+  color:var(--tie);
+}
+
+
+/* ================================================================
+   BETTING BOARD
+   ================================================================ */
+
+.bet-board-title{
+  margin:14px 0 9px;
+
+  text-align:center;
+
+  color:var(--gold2);
+
+  font-size:14px;
+
+  font-weight:900;
+
+  letter-spacing:.07em;
+}
+
+.wager-grid{
+  display:grid;
+
+  grid-template-columns:
+    repeat(6,minmax(0,1fr));
+
+  gap:7px;
+}
+
+.spot{
+  position:relative;
+
+  min-height:70px;
+
+  display:flex;
+
+  flex-direction:column;
+
+  align-items:center;
+  justify-content:center;
+
+  padding:8px;
+
+  border:1px solid #a78628;
+
+  border-radius:8px;
+
+  background:#06492b;
+
+  color:#fff;
+
+  text-align:center;
+
+  cursor:pointer;
+
+  user-select:none;
+
+  font-family:Georgia,serif;
+
+  font-size:12px;
+
+  font-weight:900;
+
+  transition:
+    background .12s ease,
+    transform .12s ease;
+}
+
+.spot:hover{
+  background:#0a6539;
+  transform:translateY(-1px);
+}
+
+.spot small{
+  margin-top:4px;
+
+  color:#eadc8a;
+
+  font-family:system-ui,sans-serif;
+
+  font-size:9px;
+
+  font-weight:700;
+}
+
+
+/* ================================================================
+   MAIN BACCARAT BETS
+   ================================================================ */
+
+.main-player,
+.main-tie,
+.main-banker{
+  min-height:96px;
+  font-size:20px;
+}
+
+.main-player{
+  grid-column:1 / 3;
+
+  border-color:#548ab0;
+
+  color:#bde4ff;
+
+  background:
+    radial-gradient(
+      circle at 50% 30%,
+      #0b674b,
+      #06452f 72%
+    );
+}
+
+.main-tie{
+  grid-column:3 / 5;
+
+  border-color:#bda13c;
+
+  color:#fff0a4;
+
+  background:
+    radial-gradient(
+      circle at 50% 30%,
+      #17643d,
+      #06452f 72%
+    );
+}
+
+.main-banker{
+  grid-column:5 / 7;
+
+  border-color:#a95858;
+
+  color:#ffb8b8;
+
+  background:
+    radial-gradient(
+      circle at 50% 30%,
+      #0b674b,
+      #06452f 72%
+    );
+}
+
+.wide2{
+  grid-column:span 2;
+}
+
+.wide3{
+  grid-column:span 3;
+}
+
+
+/* ================================================================
+   VARIANT VISIBILITY
+   ================================================================ */
+
+.variant{
+  display:none;
+}
+
+.game-baccarat_immortal
+.immortal-only{
+  display:flex;
+}
+
+.game-baccarat_rising
+.rising-only{
+  display:flex;
+}
+
+
+/* ================================================================
+   SIDE BET COLOURS
+   ================================================================ */
+
+.spot[data-wager="small_dragon"],
+.spot[data-wager="big_dragon"],
+.spot[data-wager="dragon_tiger"],
+.spot[data-wager="immortal_dragon"],
+.spot[data-wager="rising_dragon"]{
+  background:#5f2823;
+}
+
+.spot[data-wager="small_dragon"]:hover,
+.spot[data-wager="big_dragon"]:hover,
+.spot[data-wager="dragon_tiger"]:hover,
+.spot[data-wager="immortal_dragon"]:hover,
+.spot[data-wager="rising_dragon"]:hover{
+  background:#7a342e;
+}
+
+.spot[data-wager="small_tiger"],
+.spot[data-wager="big_tiger"],
+.spot[data-wager="tiger_tie"],
+.spot[data-wager="rising_tiger"]{
+  background:#5a4a16;
+}
+
+.spot[data-wager="small_tiger"]:hover,
+.spot[data-wager="big_tiger"]:hover,
+.spot[data-wager="tiger_tie"]:hover,
+.spot[data-wager="rising_tiger"]:hover{
+  background:#75611d;
+}
+
+.spot[data-wager="player_pair"]{
+  background:#174b6c;
+}
+
+.spot[data-wager="banker_pair"]{
+  background:#692c37;
+}
+
+
+/* ================================================================
+   WAGER BADGE
+   ================================================================ */
+
+.wager-badge{
+  position:absolute;
+
+  z-index:20;
+
+  right:4px;
+  top:4px;
+
+  display:inline-block;
+
+  padding:2px 6px;
+
+  border-radius:99px;
+
+  background:#d4af37;
+
+  color:#111;
+
+  font-family:system-ui,sans-serif;
+
+  font-size:9px;
+
+  line-height:1.25;
+
+  font-weight:900;
+
+  white-space:nowrap;
+
+  pointer-events:none;
+}
+
+
+/* ================================================================
+   DEAL BAR
+   ================================================================ */
+
+.actionbar{
+  display:grid;
+
+  grid-template-columns:
+    1fr
+    170px
+    260px;
+
+  gap:8px;
+
+  padding:10px;
+
+  border:1px solid #755e1d;
+
+  border-radius:
+    0 0 16px 16px;
+
+  background:#07140f;
+}
+
+.on-table{
+  font-family:system-ui,sans-serif;
+}
+
+.actionbar button{
+  padding:14px;
+
+  border:1px solid #777;
+
+  border-radius:8px;
+
+  font-weight:900;
+
+  cursor:pointer;
+}
+
+.actionbar button:disabled{
+  opacity:.35;
+  cursor:not-allowed;
+}
+
+.clear{
+  background:#181b1b;
+  color:#ddd;
+}
+
+.deal{
+  border-color:#a27d24;
+
+  background:
+    linear-gradient(
+      #e4b53d,
+      #a9750b
+    );
+
+  color:#fff;
+
+  font-size:18px;
+}
+
+
+/* ================================================================
+   RESULT BREAKDOWN
+   ================================================================ */
+
+.breakdown{
+  margin-top:8px;
+
+  padding:10px 12px;
+
+  border:1px solid #7d6520;
+
+  border-radius:9px;
+
+  background:#06150fdd;
+
+  font-family:system-ui,sans-serif;
+
+  font-size:11px;
+}
+
+.breakdown:empty{
+  display:none;
+}
+
+.br{
+  display:flex;
+
+  justify-content:space-between;
+
+  gap:10px;
+
+  padding:4px 0;
+
+  border-bottom:1px solid #ffffff10;
+}
+
+.br:last-child{
+  border-bottom:0;
+}
+
+
+/* ================================================================
+   ROAD TV
+   ================================================================ */
+
+.road-tv{
+  margin-top:10px;
+
+  overflow:hidden;
+
+  border:2px solid #9a7927;
+
+  border-radius:14px;
+
+  background:#0b100e;
+
+  box-shadow:
+    0 10px 24px #0007;
+}
+
+.road-tv-head{
+  display:grid;
+
+  grid-template-columns:
+    1fr
+    auto;
+
+  gap:12px;
+
+  align-items:center;
+
+  padding:10px 12px;
+
+  border-bottom:1px solid #8c712a;
+
+  background:
+    linear-gradient(
+      #111b16,
+      #07100c
+    );
+}
+
+.road-tv-title{
+  color:var(--gold2);
+
+  font-size:15px;
+
+  font-weight:900;
+
+  letter-spacing:.08em;
+}
+
+.road-tv-sub{
+  margin-top:2px;
+
+  color:#aebbb1;
+
+  font-family:system-ui,sans-serif;
+
+  font-size:9px;
+
+  letter-spacing:.05em;
+}
+
+.road-controls{
+  display:flex;
+
+  align-items:center;
+
+  gap:8px;
+}
+
+.road-clear{
+  padding:7px 11px;
+
+  border:1px solid #8d742d;
+
+  border-radius:7px;
+
+  background:#172019;
+
+  color:#e9e2c4;
+
+  font-family:system-ui,sans-serif;
+
+  font-size:10px;
+
+  font-weight:900;
+
+  cursor:pointer;
+}
+
+.road-clear:hover{
+  background:#202d23;
+}
+
+
+/* ================================================================
+   ROAD SCOREBOARD
+   ================================================================ */
+
+.road-scoreboard{
+  display:grid;
+
+  grid-template-columns:
+    repeat(6,minmax(0,1fr));
+
+  border-bottom:1px solid #9b843b;
+
+  background:#eee9dc;
+
+  color:#171717;
+
+  font-family:Arial,sans-serif;
+}
+
+.road-stat{
+  min-height:50px;
+
+  display:flex;
+
+  flex-direction:column;
+
+  align-items:center;
+  justify-content:center;
+
+  border-right:1px solid #c6c0b2;
+}
+
+.road-stat:last-child{
+  border-right:0;
+}
+
+.road-stat small{
+  color:#555;
+
+  font-size:8px;
+
+  font-weight:900;
+}
+
+.road-stat strong{
+  margin-top:2px;
+  font-size:17px;
+}
+
+.road-stat.player strong{
+  color:#166bc0;
+}
+
+.road-stat.banker strong{
+  color:#c72f35;
+}
+
+.road-stat.tie strong{
+  color:#238d45;
+}
+
+
+/* ================================================================
+   ROAD PANEL GRID
+   ================================================================ */
+
+.road-body{
+  display:grid;
+
+  grid-template-columns:
+    minmax(310px,.95fr)
+    minmax(500px,1.55fr);
+
+  background:#1a1d1b;
+}
+
+.road-column{
+  min-width:0;
+
+  border-right:1px solid #454b46;
+}
+
+.road-column:last-child{
+  border-right:0;
+}
+
+.road-panel{
+  position:relative;
+
+  min-width:0;
+
+  background:#ece9df;
+
+  color:#111;
+}
+
+.road-panel + .road-panel{
+  border-top:1px solid #777;
+}
+
+.road-panel-head{
+  min-height:27px;
+
+  display:flex;
+
+  align-items:center;
+  justify-content:space-between;
+
+  gap:10px;
+
+  padding:4px 8px;
+
+  border-bottom:1px solid #a8a8a8;
+
+  background:
+    linear-gradient(
+      #292d2a,
+      #151816
+    );
+
+  color:#eee7cb;
+
+  font-family:system-ui,sans-serif;
+
+  font-size:9px;
+
+  font-weight:900;
+
+  letter-spacing:.05em;
+}
+
+.road-panel-note{
+  color:#9fa9a2;
+
+  font-size:8px;
+
+  font-weight:600;
+}
+
+
+/* ================================================================
+   ROAD CANVASES
+   ================================================================ */
+
+.road-canvas-wrap{
+  position:relative;
+
+  width:100%;
+
+  overflow:hidden;
+
+  background:#f5f2e9;
+}
+
+.road-canvas{
+  display:block;
+
+  width:100%;
+
+  background:#f5f2e9;
+}
+
+#beadPlate{
+  height:220px;
+}
+
+#bigRoad{
+  height:220px;
+}
+
+#bigEyeRoad,
+#smallRoad,
+#cockroachRoad{
+  height:105px;
+}
+
+
+/* ================================================================
+   DRAGON / TIGER ROAD
+   ================================================================ */
+
+.dt-road-section{
+  border-top:2px solid #8e7228;
+
+  background:#101411;
+}
+
+.dt-road-head{
+  min-height:34px;
+
+  display:flex;
+
+  align-items:center;
+  justify-content:space-between;
+
+  gap:10px;
+
+  padding:7px 10px;
+
+  border-bottom:1px solid #99958b;
+
+  background:
+    linear-gradient(
+      #34291a,
+      #18130e
+    );
+
+  color:#f5dfa0;
+
+  font-family:system-ui,sans-serif;
+
+  font-size:10px;
+
+  font-weight:900;
+
+  letter-spacing:.06em;
+}
+
+.dt-road-note{
+  color:#b8aa84;
+
+  font-size:8px;
+
+  font-weight:600;
+}
+
+.dt-road-grid{
+  min-height:165px;
+
+  display:grid;
+
+  grid-template-columns:
+    repeat(12,minmax(0,1fr));
+
+  grid-auto-rows:52px;
+
+  gap:1px;
+
+  padding:1px;
+
+  overflow:hidden;
+
+  background:#b8b5ab;
+}
+
+.dt-cell{
+  position:relative;
+
+  min-width:0;
+
+  display:flex;
+
+  align-items:center;
+  justify-content:center;
+
+  background:#f5f2e9;
+
+  color:#111;
+
+  font-family:Arial,sans-serif;
+}
+
+.dt-marker{
+  width:38px;
+  height:38px;
+
+  display:flex;
+
+  align-items:center;
+  justify-content:center;
+
+  border:3px solid currentColor;
+
+  border-radius:50%;
+
+  background:#fffdf6;
+
+  font-size:9px;
+
+  font-weight:900;
+
+  line-height:1;
+
+  text-align:center;
+}
+
+.dt-marker.dragon{
+  color:var(--dragon);
+}
+
+.dt-marker.tiger{
+  color:var(--tiger-dark);
+}
+
+.dt-marker.tie{
+  color:#299349;
+}
+
+.dt-marker.immortal{
+  color:var(--immortal);
+}
+
+.dt-marker.rising-dragon{
+  color:var(--rising);
+}
+
+.dt-marker.rising-tiger{
+  color:#a68117;
+}
+
+.dt-marker.combo{
+  border-style:double;
+  border-width:4px;
+}
+
+.dt-marker.big{
+  background:#fff1ef;
+}
+
+.dt-marker.small{
+  background:#fffaf0;
+}
+
+.dt-marker.special{
+  box-shadow:
+    inset 0 0 0 2px #ffffff,
+    0 0 0 1px currentColor;
+}
+
+.dt-multi{
+  position:absolute;
+
+  right:2px;
+  bottom:2px;
+
+  min-width:16px;
+  height:16px;
+
+  display:flex;
+
+  align-items:center;
+  justify-content:center;
+
+  padding:0 3px;
+
+  border-radius:99px;
+
+  background:#222;
+
+  color:#fff;
+
+  font-size:8px;
+
+  font-weight:900;
+}
+
+.dt-road-legend{
+  display:flex;
+
+  align-items:center;
+
+  gap:12px;
+
+  flex-wrap:wrap;
+
+  padding:8px 10px;
+
+  border-top:1px solid #b2ada0;
+
+  background:#e8e3d6;
+
+  color:#222;
+
+  font-family:Arial,sans-serif;
+
+  font-size:9px;
+
+  font-weight:900;
+}
+
+.dt-legend-item{
+  display:flex;
+
+  align-items:center;
+
+  gap:5px;
+}
+
+.dt-legend-badge{
+  min-width:25px;
+  height:20px;
+
+  display:inline-flex;
+
+  align-items:center;
+  justify-content:center;
+
+  padding:0 5px;
+
+  border:2px solid currentColor;
+
+  border-radius:50%;
+
+  background:#fffdf6;
+
+  font-size:8px;
+}
+
+.dt-legend-badge.dragon{
+  color:var(--dragon);
+}
+
+.dt-legend-badge.tiger{
+  color:var(--tiger-dark);
+}
+
+.dt-legend-badge.tie{
+  color:#299349;
+}
+
+.dt-legend-badge.immortal{
+  color:var(--immortal);
+}
+
+.dt-legend-badge.rising{
+  color:var(--rising);
+}
+
+
+/* ================================================================
+   ROAD LEGEND
+   ================================================================ */
+
+.road-legend{
+  display:flex;
+
+  align-items:center;
+
+  gap:14px;
+
+  flex-wrap:wrap;
+
+  padding:8px 10px;
+
+  border-top:1px solid #8e8a7f;
+
+  background:#ded9cc;
+
+  color:#222;
+
+  font-family:Arial,sans-serif;
+
+  font-size:9px;
+
+  font-weight:900;
+}
+
+.road-key{
+  display:flex;
+
+  align-items:center;
+
+  gap:5px;
+}
+
+.road-dot{
+  width:13px;
+  height:13px;
+
+  border-radius:50%;
+
+  border:2px solid currentColor;
+}
+
+.road-dot.fill{
+  border:0;
+  background:currentColor;
+}
+
+.road-key.player{
+  color:#1671ca;
+}
+
+.road-key.banker{
+  color:#cf3338;
+}
+
+.road-key.tie{
+  color:#299349;
+}
+
+.road-pair-marker{
+  position:relative;
+
+  width:14px;
+  height:14px;
+
+  border:1px solid #777;
+
+  background:#f5f2e9;
+}
+
+.road-pair-marker::before{
+  content:"";
+
+  position:absolute;
+
+  left:1px;
+  top:1px;
+
+  width:4px;
+  height:4px;
+
+  border-radius:50%;
+
+  background:#1671ca;
+}
+
+.road-pair-marker::after{
+  content:"";
+
+  position:absolute;
+
+  right:1px;
+  bottom:1px;
+
+  width:4px;
+  height:4px;
+
+  border-radius:50%;
+
+  background:#cf3338;
+}
+
+
+/* ================================================================
+   ROAD FOOTER
+   ================================================================ */
+
+.road-footer{
+  display:grid;
+
+  grid-template-columns:
+    1fr
+    1fr;
+
+  border-top:1px solid #8d887d;
+
+  background:#eee9dc;
+
+  color:#111;
+
+  font-family:Arial,sans-serif;
+}
+
+.road-next{
+  min-height:45px;
+
+  display:flex;
+
+  align-items:center;
+  justify-content:center;
+
+  gap:10px;
+
+  padding:6px 10px;
+
+  border-right:1px solid #bbb4a5;
+
+  font-size:9px;
+
+  font-weight:900;
+}
+
+.road-next:last-child{
+  border-right:0;
+}
+
+.road-next-icons{
+  display:flex;
+
+  align-items:center;
+
+  gap:4px;
+}
+
+.pred-dot{
+  width:11px;
+  height:11px;
+
+  border-radius:50%;
+
+  border:2px solid currentColor;
+}
+
+.pred-slash{
+  width:12px;
+  height:3px;
+
+  border-radius:99px;
+
+  background:currentColor;
+
+  transform:rotate(-45deg);
+}
+
+.pred-player{
+  color:#1671ca;
+}
+
+.pred-banker{
+  color:#cf3338;
+}
+
+
+/* ================================================================
+   PAY TABLE
+   ================================================================ */
+
+.rules{
+  margin-top:8px;
+
+  padding:12px;
+
+  border:1px solid #a37c20;
+
+  border-radius:10px;
+
+  background:#06351f;
+}
+
+.rules h3{
+  margin:0 0 8px;
+
+  text-align:center;
+
+  color:var(--gold2);
+}
+
+.pay-table{
+  display:grid;
+
+  grid-template-columns:
+    repeat(3,minmax(0,1fr));
+
+  gap:6px 12px;
+
+  font-family:system-ui,sans-serif;
+
+  font-size:11px;
+}
+
+.prow{
+  display:flex;
+
+  align-items:center;
+  justify-content:space-between;
+
+  gap:10px;
+
+  min-height:30px;
+
+  padding:5px 7px;
+
+  border-bottom:1px solid #ffffff18;
+}
+
+.odds{
+  color:var(--gold2);
+
+  font-weight:900;
+
+  white-space:nowrap;
+}
+
+
+/* ================================================================
+   RESPONSIVE
+   ================================================================ */
+
+@media(max-width:1200px){
+
+  .top{
+    grid-template-columns:
+      120px
+      1fr;
+  }
+
+  .top-right{
+    grid-column:1 / -1;
+
+    justify-content:center;
+  }
+
+  .main{
+    grid-template-columns:
+      130px
+      minmax(0,1fr);
+  }
+
+  .chipbar{
+    justify-content:center;
+  }
+
+  .road-body{
+    grid-template-columns:1fr;
+  }
+
+  .road-column{
+    border-right:0;
+  }
+
+  .road-column + .road-column{
+    border-top:1px solid #555;
+  }
+
+  .dt-road-grid{
+    grid-template-columns:
+      repeat(10,minmax(0,1fr));
+  }
+
+  .pay-table{
+    grid-template-columns:
+      1fr
+      1fr;
+  }
+}
+
+
+@media(max-width:850px){
+
+  .main{
+    display:block;
+  }
+
+  .side{
+    margin-bottom:10px;
+  }
+
+  .card-zone{
+    grid-template-columns:1fr;
+  }
+
+  .card-hand:first-child{
+    border-right:0;
+
+    border-bottom:
+      1px solid #d5a72c55;
+  }
+
+  .wager-grid{
+    grid-template-columns:
+      repeat(2,minmax(0,1fr));
+  }
+
+  .main-player,
+  .main-tie,
+  .main-banker,
+  .wide2,
+  .wide3{
+    grid-column:span 1;
+  }
+
+  .actionbar{
+    grid-template-columns:1fr;
+  }
+
+  .road-scoreboard{
+    grid-template-columns:
+      repeat(3,1fr);
+  }
+
+  .road-stat:nth-child(3){
+    border-right:0;
+  }
+
+  .road-stat:nth-child(-n+3){
+    border-bottom:
+      1px solid #c6c0b2;
+  }
+
+  .dt-road-grid{
+    grid-template-columns:
+      repeat(6,minmax(0,1fr));
+  }
+
+  .road-footer{
+    grid-template-columns:1fr;
+  }
+
+  .road-next{
+    border-right:0;
+  }
+
+  .road-next + .road-next{
+    border-top:
+      1px solid #bbb4a5;
+  }
+
+  .pay-table{
+    grid-template-columns:1fr;
+  }
+}
+
+</style>
+</head>
+
+
+<body class="game-{{ game }}">
+
+<div class="shell">
+
+
+  <!-- ============================================================
+       HEADER
+       ============================================================ -->
+
+  <div class="top">
+
+    <a
+      class="portal"
+      href="{{ url_for('portal') }}"
+    >
+      ← PORTAL
+    </a>
+
+
+    <div>
+
+      <span class="game-title">
+        {{ game_icon }}
+        {{ game_name|upper }}
+      </span>
+
+      <span
+        class="ready"
+        id="phaseLabel"
+      >
+        BETTING
+      </span>
+
+    </div>
+
+
+    <div class="top-right">
+
+      <div>
+
+        <div class="balance">
+
+          BALANCE
+
+          <strong id="balanceDisplay">
+            {{ starting_credits }}
+          </strong>
+
+        </div>
+
+
+        <div
+          class="chipbar"
+          id="chipBar"
+        ></div>
+
+      </div>
+
+
+      <div>
+
+        <button
+          class="reset-btn"
+          id="resetBtn"
+          type="button"
+        >
+          ↻ RESET CREDITS
+        </button>
+
+        <div class="max-bet-note">
+          Max / deal:
+          {{ max_bet }}
+          cr
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+
+  <!-- ============================================================
+       MAIN
+       ============================================================ -->
+
+  <div class="main">
+
+
+    <!-- ==========================================================
+         SIDEBAR
+         ========================================================== -->
+
+    <aside class="side">
+
+      <div class="panel">
+
+        <div class="metric">
+
+          <small>
+            TOTAL STAKE
+          </small>
+
+          <strong id="stakeMetric">
+            0
+          </strong>
+
+        </div>
+
+
+        <div class="metric">
+
+          <small>
+            TOTAL RETURN
+          </small>
+
+          <strong id="returnMetric">
+            0
+          </strong>
+
+        </div>
+
+
+        <div class="metric">
+
+          <small>
+            NET WIN
+          </small>
+
+          <strong
+            class="metric-value"
+            id="netMetric"
+          >
+            0
+          </strong>
+
+        </div>
+
+      </div>
+
+
+      <div class="panel history">
+
+        <b>
+          ROUND HISTORY
+        </b>
+
+        <div
+          class="history-list"
+          id="history"
+        ></div>
+
+      </div>
+
+    </aside>
+
+
+    <!-- ==========================================================
+         CENTER
+         ========================================================== -->
+
+    <section class="center">
+
+
+      <!-- ========================================================
+           STATUS
+           ======================================================== -->
+
+      <div
+        class="status-bar"
+        id="statusBar"
+      >
+        <strong>
+          Place your bets
+        </strong>
+        — select a chip, tap a wager, then Deal.
+      </div>
+
+
+      <!-- ========================================================
+           BACCARAT TABLE
+           ======================================================== -->
+
+      <div class="bacc-table">
+
+
+        <!-- ======================================================
+             PLAYER / BANKER CARDS
+             ====================================================== -->
+
+        <div class="card-zone">
+
+
+          <div class="card-hand">
+
+            <div class="hand-name player">
+              PLAYER
+            </div>
+
+            <div
+              class="score"
+              id="playerScore"
+            >
+              —
+            </div>
+
+            <div
+              class="cards"
+              id="playerCards"
+            ></div>
+
+          </div>
+
+
+          <div class="card-hand">
+
+            <div class="hand-name banker">
+              BANKER
+            </div>
+
+            <div
+              class="score"
+              id="bankerScore"
+            >
+              —
+            </div>
+
+            <div
+              class="cards"
+              id="bankerCards"
+            ></div>
+
+          </div>
+
+
+        </div>
+
+
+        <!-- ======================================================
+             WINNER
+             ====================================================== -->
+
+        <div
+          class="winner"
+          id="winner"
+        ></div>
+
+
+        <!-- ======================================================
+             BETTING BOARD
+             ====================================================== -->
+
+        <div class="bet-board-title">
+          BET PLACEMENT
+        </div>
+
+
+        <div
+          class="wager-grid"
+          id="wagerGrid"
+        >
+
+
+          <!-- MAIN -->
+
+          <div
+            class="spot player main-player"
+            data-wager="player"
+          >
+            PLAYER
+
+            <small>
+              PAYS 1 TO 1
+            </small>
+          </div>
+
+
+          <div
+            class="spot tie main-tie"
+            data-wager="tie"
+          >
+            TIE
+
+            <small>
+              PAYS 8 TO 1
+            </small>
+          </div>
+
+
+          <div
+            class="spot banker main-banker"
+            data-wager="banker"
+          >
+            BANKER
+
+            <small>
+              PAYS 1 TO 1 · 1 TO 2 ON 6
+            </small>
+          </div>
+
+
+          <!-- DRAGON / TIGER -->
+
+          <div
+            class="spot"
+            data-wager="small_dragon"
+          >
+            SMALL DRAGON
+
+            <small>
+              15 TO 1
+            </small>
+          </div>
+
+
+          <div
+            class="spot"
+            data-wager="big_dragon"
+          >
+            BIG DRAGON
+
+            <small>
+              30 TO 1
+            </small>
+          </div>
+
+
+          <div
+            class="spot wide2"
+            data-wager="dragon_tiger"
+          >
+            DRAGON TIGER
+
+            <small>
+              30 / 40 / 100 TO 1
+            </small>
+          </div>
+
+
+          <div
+            class="spot"
+            data-wager="big_tiger"
+          >
+            BIG TIGER
+
+            <small>
+              50 TO 1
+            </small>
+          </div>
+
+
+          <div
+            class="spot"
+            data-wager="small_tiger"
+          >
+            SMALL TIGER
+
+            <small>
+              22 TO 1
+            </small>
+          </div>
+
+
+          <div
+            class="spot wide2"
+            data-wager="tiger_tie"
+          >
+            TIGER TIE
+
+            <small>
+              35 TO 1
+            </small>
+          </div>
+
+
+          <!-- IMMORTAL -->
+
+          <div
+            class="spot variant immortal-only"
+            data-wager="player_pair"
+          >
+            PLAYER PAIR
+
+            <small>
+              11 TO 1
+            </small>
+          </div>
+
+
+          <div
+            class="spot variant immortal-only wide2"
+            data-wager="immortal_dragon"
+          >
+            IMMORTAL DRAGON
+
+            <small>
+              25 TO 1
+            </small>
+          </div>
+
+
+          <div
+            class="spot variant immortal-only"
+            data-wager="banker_pair"
+          >
+            BANKER PAIR
+
+            <small>
+              11 TO 1
+            </small>
+          </div>
+
+
+          <!-- RISING -->
+
+          <div
+            class="spot variant rising-only wide3"
+            data-wager="rising_dragon"
+          >
+            RISING DRAGON
+
+            <small>
+              4 / 6 / 4.5 TO 1
+            </small>
+          </div>
+
+
+          <div
+            class="spot variant rising-only wide3"
+            data-wager="rising_tiger"
+          >
+            RISING TIGER
+
+            <small>
+              4 / 4.5 / 5.5 TO 1
+            </small>
+          </div>
+
+
+        </div>
+
+      </div>
+
+
+      <!-- ========================================================
+           DEAL BAR
+           ======================================================== -->
+
+      <div class="actionbar">
+
+        <div class="on-table">
+          ON TABLE
+          <br>
+
+          <strong id="pendingTotal">
+            0
+          </strong>
+        </div>
+
+
+        <button
+          class="clear"
+          id="clearBtn"
+          type="button"
+          disabled
+        >
+          ✕ CLEAR BETS
+        </button>
+
+
+        <button
+          class="deal"
+          id="dealBtn"
+          type="button"
+          disabled
+        >
+          DEAL
+        </button>
+
+      </div>
+
+
+      <!-- ========================================================
+           RESULT BREAKDOWN
+           ======================================================== -->
+
+      <div
+        class="breakdown"
+        id="breakdown"
+      ></div>
+
+
+      <!-- ========================================================
+           CASINO ROAD TV
+           ======================================================== -->
+
+      <div
+        class="road-tv"
+        id="roadTV"
+      >
+
+
+        <!-- ROAD HEADER -->
+
+        <div class="road-tv-head">
+
+          <div>
+
+            <div class="road-tv-title">
+              BACCARAT ROAD
+            </div>
+
+            <div class="road-tv-sub">
+              BEAD PLATE · BIG ROAD · BIG EYE BOY · SMALL ROAD ·
+              COCKROACH PIG · DRAGON / TIGER ROAD
+            </div>
+
+          </div>
+
+
+          <div class="road-controls">
+
+            <button
+              class="road-clear"
+              id="clearRoadBtn"
+              type="button"
+            >
+              CLEAR ROAD
+            </button>
+
+          </div>
+
+        </div>
+
+
+        <!-- ======================================================
+             SCOREBOARD
+             ====================================================== -->
+
+        <div class="road-scoreboard">
+
+          <div class="road-stat">
+
+            <small>
+              HANDS
+            </small>
+
+            <strong id="roadHands">
+              0
+            </strong>
+
+          </div>
+
+
+          <div class="road-stat player">
+
+            <small>
+              PLAYER
+            </small>
+
+            <strong id="roadPlayer">
+              0
+            </strong>
+
+          </div>
+
+
+          <div class="road-stat banker">
+
+            <small>
+              BANKER
+            </small>
+
+            <strong id="roadBanker">
+              0
+            </strong>
+
+          </div>
+
+
+          <div class="road-stat tie">
+
+            <small>
+              TIE
+            </small>
+
+            <strong id="roadTie">
+              0
+            </strong>
+
+          </div>
+
+
+          <div class="road-stat player">
+
+            <small>
+              PLAYER PAIR
+            </small>
+
+            <strong id="roadPlayerPair">
+              0
+            </strong>
+
+          </div>
+
+
+          <div class="road-stat banker">
+
+            <small>
+              BANKER PAIR
+            </small>
+
+            <strong id="roadBankerPair">
+              0
+            </strong>
+
+          </div>
+
+        </div>
+
+
+        <!-- ======================================================
+             STANDARD ROAD BODY
+             ====================================================== -->
+
+        <div class="road-body">
+
+
+          <!-- BEAD PLATE -->
+
+          <div class="road-column">
+
+            <div class="road-panel">
+
+              <div class="road-panel-head">
+
+                <span>
+                  BEAD PLATE
+                </span>
+
+                <span class="road-panel-note">
+                  RESULTS IN DEAL ORDER
+                </span>
+
+              </div>
+
+
+              <div class="road-canvas-wrap">
+
+                <canvas
+                  class="road-canvas"
+                  id="beadPlate"
+                ></canvas>
+
+              </div>
+
+            </div>
+
+          </div>
+
+
+          <!-- RIGHT ROADS -->
+
+          <div class="road-column">
+
+
+            <div class="road-panel">
+
+              <div class="road-panel-head">
+
+                <span>
+                  BIG ROAD
+                </span>
+
+                <span class="road-panel-note">
+                  PLAYER / BANKER STREAKS
+                </span>
+
+              </div>
+
+
+              <div class="road-canvas-wrap">
+
+                <canvas
+                  class="road-canvas"
+                  id="bigRoad"
+                ></canvas>
+
+              </div>
+
+            </div>
+
+
+            <div class="road-panel">
+
+              <div class="road-panel-head">
+
+                <span>
+                  BIG EYE BOY
+                </span>
+
+                <span class="road-panel-note">
+                  RED / BLUE PATTERN ROAD
+                </span>
+
+              </div>
+
+
+              <div class="road-canvas-wrap">
+
+                <canvas
+                  class="road-canvas"
+                  id="bigEyeRoad"
+                ></canvas>
+
+              </div>
+
+            </div>
+
+
+            <div class="road-panel">
+
+              <div class="road-panel-head">
+
+                <span>
+                  SMALL ROAD
+                </span>
+
+                <span class="road-panel-note">
+                  RED / BLUE PATTERN ROAD
+                </span>
+
+              </div>
+
+
+              <div class="road-canvas-wrap">
+
+                <canvas
+                  class="road-canvas"
+                  id="smallRoad"
+                ></canvas>
+
+              </div>
+
+            </div>
+
+
+            <div class="road-panel">
+
+              <div class="road-panel-head">
+
+                <span>
+                  COCKROACH PIG
+                </span>
+
+                <span class="road-panel-note">
+                  RED / BLUE SLASH ROAD
+                </span>
+
+              </div>
+
+
+              <div class="road-canvas-wrap">
+
+                <canvas
+                  class="road-canvas"
+                  id="cockroachRoad"
+                ></canvas>
+
+              </div>
+
+            </div>
+
+
+          </div>
+
+        </div>
+
+
+        <!-- ======================================================
+             DRAGON / TIGER RESULT ROAD
+
+             This is intentionally separate from Big Road.
+
+             One Baccarat hand may create several markers, e.g.
+             a Dragon/Tiger combination plus a Rising/Immortal
+             result. blackjack-style settlement does not affect it;
+             this is purely an outcome-history display.
+             ====================================================== -->
+
+        <div class="dt-road-section">
+
+          <div class="dt-road-head">
+
+            <span>
+              DRAGON · TIGER RESULT ROAD
+            </span>
+
+            <span class="dt-road-note">
+              SIDE-BET RESULTS · IN HAND ORDER
+            </span>
+
+          </div>
+
+
+          <div
+            class="dt-road-grid"
+            id="dragonTigerRoad"
+          ></div>
+
+
+          <div class="dt-road-legend">
+
+            <div class="dt-legend-item">
+
+              <span class="dt-legend-badge dragon">
+                SD
+              </span>
+
+              SMALL DRAGON
+
+            </div>
+
+
+            <div class="dt-legend-item">
+
+              <span class="dt-legend-badge dragon">
+                BD
+              </span>
+
+              BIG DRAGON
+
+            </div>
+
+
+            <div class="dt-legend-item">
+
+              <span class="dt-legend-badge tiger">
+                ST
+              </span>
+
+              SMALL TIGER
+
+            </div>
+
+
+            <div class="dt-legend-item">
+
+              <span class="dt-legend-badge tiger">
+                BT
+              </span>
+
+              BIG TIGER
+
+            </div>
+
+
+            <div class="dt-legend-item">
+
+              <span class="dt-legend-badge tie">
+                TT
+              </span>
+
+              TIGER TIE
+
+            </div>
+
+
+            <div class="dt-legend-item">
+
+              <span class="dt-legend-badge dragon">
+                DT
+              </span>
+
+              DRAGON TIGER
+
+            </div>
+
+
+            <div
+              class="dt-legend-item immortal-only variant"
+            >
+
+              <span class="dt-legend-badge immortal">
+                ID
+              </span>
+
+              IMMORTAL DRAGON
+
+            </div>
+
+
+            <div
+              class="dt-legend-item rising-only variant"
+            >
+
+              <span class="dt-legend-badge rising">
+                RD
+              </span>
+
+              RISING DRAGON
+
+            </div>
+
+
+            <div
+              class="dt-legend-item rising-only variant"
+            >
+
+              <span class="dt-legend-badge rising">
+                RT
+              </span>
+
+              RISING TIGER
+
+            </div>
+
+          </div>
+
+        </div>
+
+
+        <!-- ======================================================
+             STANDARD ROAD LEGEND
+             ====================================================== -->
+
+        <div class="road-legend">
+
+          <div class="road-key player">
+
+            <span class="road-dot"></span>
+
+            PLAYER
+
+          </div>
+
+
+          <div class="road-key banker">
+
+            <span class="road-dot"></span>
+
+            BANKER
+
+          </div>
+
+
+          <div class="road-key tie">
+
+            <span class="road-dot"></span>
+
+            TIE
+
+          </div>
+
+
+          <div class="road-key">
+
+            <span class="road-pair-marker"></span>
+
+            PAIR MARKERS
+
+          </div>
+
+
+          <div
+            style="
+              margin-left:auto;
+              color:#5c5c5c;
+              font-weight:600;
+            "
+          >
+            Pair dots:
+            blue = Player Pair · red = Banker Pair
+          </div>
+
+        </div>
+
+
+        <!-- ======================================================
+             DERIVED ROAD PREVIEW
+             ====================================================== -->
+
+        <div class="road-footer">
+
+
+          <div class="road-next">
+
+            <span>
+              IF NEXT IS PLAYER
+            </span>
+
+            <div
+              class="road-next-icons"
+              id="playerPrediction"
+            ></div>
+
+          </div>
+
+
+          <div class="road-next">
+
+            <span>
+              IF NEXT IS BANKER
+            </span>
+
+            <div
+              class="road-next-icons"
+              id="bankerPrediction"
+            ></div>
+
+          </div>
+
+
+        </div>
+
+
+      </div>
+
+
+      <!-- ========================================================
+           PAY TABLE
+           ======================================================== -->
+
+      <div class="rules">
+
+        <h3 id="rulesTitle">
+          {{ game_name|upper }} PAY TABLE
+        </h3>
+
+        <div
+          class="pay-table"
+          id="payTable"
+        ></div>
+
+      </div>
+
+
+    </section>
+
+  </div>
+
+</div>
+
+
+<!-- ==============================================================
+     CONFIG
+     ============================================================== -->
+
+<script>
+
+window.BACCARAT_GAME =
+  {{ game|tojson }};
+
+window.BACCARAT_MAX =
+  {{ max_bet|tojson }};
+
+window.BACCARAT_START =
+  {{ starting_credits|tojson }};
+
+</script>
+
+
+<!-- ==============================================================
+     CONTROLLER
+     ============================================================== -->
+
+<script
+  type="module"
+  src="{{ url_for(
+    'static',
+    filename='js/baccarat_solo.js'
+  ) }}?v={{ static_v|default('1') }}"
+></script>
+
+</body>
+
+</html>

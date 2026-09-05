@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>ETG Sim — Table</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/board.css') }}?v={{ static_v }}">
+</head>
+<body>
+  <header>
+    <div class="who">Playing as <span id="playerName">—</span></div>
+    <div class="balance">
+      <span class="lbl">Credits</span>
+      <span class="val" id="balanceDisplay">0</span>
+    </div>
+  </header>
+
+  <main>
+    <div class="board-col">
+      <div class="table-info">
+        <div>
+          <div class="g" id="gameLabel">—</div>
+          <div class="r" id="roundLabel">—</div>
+        </div>
+        <div class="phase-badge" id="phaseLabel">IDLE</div>
+      </div>
+
+      <div id="countdownWrap" style="display:none;">
+        <div class="label">Betting closes in</div>
+        <div id="countdown">—</div>
+      </div>
+
+      <div class="status" id="statusBar">
+        <strong>Welcome</strong>
+        <div>Waiting for the next round…</div>
+      </div>
+
+      <div id="resultArea" style="display:none;"></div>
+
+      <div id="bettingArea" style="display:none;"></div>
+    </div>
+
+    <aside class="side-col">
+      <div class="chip-section">
+        <div class="lbl">Chip value</div>
+        <div id="chipBar"></div>
+      </div>
+
+      <div class="max-bet-note">Max bet per round: {{ max_bet }} credits</div>
+
+      <div class="leaderboard">
+        <h2>Leaderboard</h2>
+        <div id="leaderboardList"></div>
+      </div>
+    </aside>
+  </main>
+
+  <script type="module" src="{{ url_for('static', filename='js/player.js') }}?v={{ static_v }}"></script>
+</body>
+</html>

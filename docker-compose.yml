@@ -1,0 +1,24 @@
+services:
+  simulator:
+    build: .
+
+    container_name: etg-simulator
+
+    ports:
+      - "8060:8060"
+
+    env_file:
+      - .env
+
+    environment:
+      # Always overrides .env — the container's data dir is fixed by the volume mount below,
+      # regardless of what DB_PATH is set to on the host for local (non-Docker) runs.
+      DB_PATH: /app/data/etg_sim.db
+
+    volumes:
+      - simulator_data:/app/data
+
+    restart: unless-stopped
+
+volumes:
+  simulator_data:

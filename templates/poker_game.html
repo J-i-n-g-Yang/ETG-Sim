@@ -1,0 +1,1982 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+<meta charset="UTF-8">
+
+<meta
+  name="viewport"
+  content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"
+>
+
+<title>{{ game_name }} · ETG Sim</title>
+
+<style>
+
+/* ================================================================
+   ROOT
+   ================================================================ */
+
+:root{
+  --bg:#04110c;
+  --panel:#071a13;
+
+  --felt:#064d2c;
+  --felt2:#08703d;
+
+  --gold:#d5a72c;
+  --gold2:#f4dc83;
+
+  --text:#f7f4e7;
+  --muted:#a8b9aa;
+
+  --win:#65ef8a;
+  --lose:#ff8c8c;
+  --push:#f4dc83;
+
+  --red:#a52b27;
+}
+
+*{
+  box-sizing:border-box;
+}
+
+html,
+body{
+  margin:0;
+  min-height:100%;
+}
+
+body{
+  min-height:100vh;
+
+  overflow-x:hidden;
+
+  background:
+    radial-gradient(
+      circle at 50% 0,
+      #0b4329,
+      #020b08 70%
+    );
+
+  color:var(--text);
+
+  font-family:
+    Georgia,
+    "Times New Roman",
+    serif;
+}
+
+button{
+  font:inherit;
+}
+
+
+/* ================================================================
+   PAGE SHELL
+   ================================================================ */
+
+.shell{
+  min-height:100vh;
+
+  padding:14px;
+}
+
+
+/* ================================================================
+   HEADER
+   Same overall structure as Dueling 8s / Blackjack
+   ================================================================ */
+
+.top{
+  display:grid;
+
+  grid-template-columns:
+    150px
+    minmax(0,1fr)
+    590px;
+
+  gap:16px;
+
+  align-items:start;
+}
+
+.portal,
+.reset{
+  border:
+    1px solid #a27d24;
+
+  border-radius:
+    10px;
+
+  padding:
+    13px;
+
+  background:
+    #06150f;
+
+  color:
+    #fff;
+
+  text-decoration:
+    none;
+
+  font-weight:
+    700;
+
+  cursor:
+    pointer;
+}
+
+.portal:hover,
+.reset:hover{
+  border-color:
+    var(--gold2);
+
+  filter:
+    brightness(1.15);
+}
+
+.game-title{
+  font-size:
+    34px;
+
+  color:
+    var(--gold2);
+
+  font-weight:
+    900;
+
+  letter-spacing:
+    .04em;
+}
+
+.ready{
+  display:inline-block;
+
+  margin-left:
+    12px;
+
+  padding:
+    7px 14px;
+
+  border:
+    1px solid #967821;
+
+  border-radius:
+    999px;
+
+  color:
+    #fff3b0;
+
+  background:
+    #082317;
+
+  font-family:
+    system-ui,
+    sans-serif;
+
+  font-size:
+    12px;
+
+  font-weight:
+    800;
+}
+
+.top-right{
+  display:flex;
+
+  justify-content:flex-end;
+
+  align-items:flex-start;
+
+  gap:12px;
+}
+
+.balance{
+  text-align:center;
+
+  color:
+    var(--gold2);
+
+  font-size:
+    14px;
+}
+
+.balance strong{
+  display:block;
+
+  font-size:
+    28px;
+}
+
+.chipbar{
+  display:flex;
+
+  gap:8px;
+
+  justify-content:flex-end;
+
+  flex-wrap:wrap;
+
+  margin-top:
+    8px;
+}
+
+.chip{
+  width:
+    58px;
+
+  height:
+    58px;
+
+  flex:
+    0 0 58px;
+
+  border-radius:
+    50%;
+
+  border:
+    3px dashed #eee;
+
+  color:
+    #fff;
+
+  font-family:
+    Arial,
+    sans-serif;
+
+  font-size:
+    11px;
+
+  font-weight:
+    900;
+
+  cursor:
+    pointer;
+
+  transition:
+    transform .12s ease,
+    filter .12s ease;
+}
+
+.chip:hover{
+  transform:
+    translateY(-2px);
+
+  filter:
+    brightness(1.15);
+}
+
+.chip.active{
+  outline:
+    3px solid var(--gold);
+
+  outline-offset:
+    2px;
+}
+
+.reset-wrap{
+  display:flex;
+
+  flex-direction:column;
+
+  align-items:flex-end;
+
+  gap:6px;
+}
+
+.max-bet-note{
+  color:
+    var(--muted);
+
+  text-align:right;
+
+  font-family:
+    system-ui,
+    sans-serif;
+
+  font-size:
+    10px;
+}
+
+
+/* ================================================================
+   MAIN PAGE GRID
+   ================================================================ */
+
+.main{
+  display:grid;
+
+  grid-template-columns:
+    170px
+    minmax(800px,1fr);
+
+  gap:12px;
+
+  margin-top:
+    12px;
+}
+
+.side{
+  display:flex;
+
+  flex-direction:column;
+
+  gap:10px;
+}
+
+.center{
+  min-width:0;
+}
+
+
+/* ================================================================
+   LEFT METRICS
+   ================================================================ */
+
+.panel{
+  background:
+    #06150fdd;
+
+  border:
+    1px solid #7d6520;
+
+  border-radius:
+    10px;
+
+  padding:
+    12px;
+}
+
+.metric{
+  padding:
+    10px 0;
+
+  border-bottom:
+    1px solid #ffffff15;
+}
+
+.metric:last-child{
+  border-bottom:0;
+}
+
+.metric small{
+  display:block;
+
+  color:#ddd;
+}
+
+.metric strong{
+  display:block;
+
+  margin-top:
+    3px;
+
+  font-size:
+    20px;
+}
+
+.net{
+  color:
+    var(--win);
+}
+
+.metric-value.win,
+.win{
+  color:
+    var(--win);
+}
+
+.metric-value.lose,
+.loss,
+.lose{
+  color:
+    var(--lose);
+}
+
+.metric-value.push,
+.push{
+  color:
+    var(--push);
+}
+
+
+/* ================================================================
+   HISTORY
+   ================================================================ */
+
+.history-panel{
+  min-height:
+    210px;
+
+  font-family:
+    system-ui,
+    sans-serif;
+
+  font-size:
+    12px;
+
+  color:
+    #b7c4ba;
+}
+
+.history-panel > b{
+  font-family:
+    Georgia,
+    "Times New Roman",
+    serif;
+
+  color:#fff;
+}
+
+.history{
+  display:flex;
+
+  gap:5px;
+
+  flex-wrap:wrap;
+
+  margin-top:
+    9px;
+}
+
+.hist{
+  padding:
+    3px 7px;
+
+  border:
+    1px solid currentColor;
+
+  border-radius:
+    999px;
+
+  font-size:
+    10px;
+}
+
+.hist.win{
+  color:
+    var(--win);
+}
+
+.hist.loss{
+  color:
+    var(--lose);
+}
+
+.hist.push{
+  color:
+    var(--push);
+}
+
+
+/* ================================================================
+   STATUS BAR
+   ================================================================ */
+
+.status{
+  min-height:
+    38px;
+
+  margin-bottom:
+    8px;
+
+  padding:
+    10px 13px;
+
+  border:
+    1px solid #7d6520;
+
+  border-radius:
+    9px;
+
+  background:
+    #06150fdd;
+
+  color:
+    #e8eee9;
+
+  font-family:
+    system-ui,
+    sans-serif;
+
+  font-size:
+    12px;
+}
+
+.status strong{
+  color:
+    #f6dc7b;
+}
+
+
+/* ================================================================
+   MAIN POKER TABLE
+   ================================================================ */
+
+.table{
+  position:relative;
+
+  min-height:
+    650px;
+
+  padding:
+    22px;
+
+  border:
+    3px solid #a98427;
+
+  border-radius:
+    30px;
+
+  background:
+    radial-gradient(
+      circle at 50% 20%,
+      #08703d,
+      #043f25 75%
+    );
+
+  box-shadow:
+    0 14px 30px #0008;
+}
+
+
+/* ================================================================
+   DEALER ZONE
+   ================================================================ */
+
+.dealer-zone{
+  min-height:
+    210px;
+
+  padding-bottom:
+    18px;
+
+  border-bottom:
+    2px solid #d5a72c55;
+
+  text-align:center;
+}
+
+.zone-title{
+  color:
+    var(--gold2);
+
+  font-weight:
+    900;
+
+  letter-spacing:
+    .08em;
+}
+
+.dealer-cards{
+  display:flex;
+
+  gap:8px;
+
+  justify-content:center;
+
+  align-items:center;
+
+  flex-wrap:wrap;
+
+  min-height:
+    110px;
+
+  margin:
+    12px 0 4px;
+}
+
+
+/* ================================================================
+   COMMUNITY CARDS
+   ================================================================ */
+
+.community-zone{
+  min-height:
+    112px;
+
+  margin-top:
+    8px;
+
+  text-align:center;
+}
+
+.community-title{
+  min-height:
+    18px;
+
+  color:
+    #d9d2a2;
+
+  font-family:
+    system-ui,
+    sans-serif;
+
+  font-size:
+    11px;
+
+  font-weight:
+    900;
+
+  letter-spacing:
+    .07em;
+}
+
+.community-cards{
+  display:flex;
+
+  gap:8px;
+
+  justify-content:center;
+
+  align-items:center;
+
+  flex-wrap:wrap;
+
+  min-height:
+    82px;
+
+  margin-top:
+    5px;
+}
+
+
+/* ================================================================
+   PLAYING CARDS
+   ================================================================ */
+
+.card,
+.card-slot{
+  width:
+    58px;
+
+  height:
+    82px;
+
+  flex:
+    0 0 58px;
+
+  border-radius:
+    7px;
+}
+
+.card{
+  display:flex;
+
+  flex-direction:column;
+
+  align-items:center;
+
+  justify-content:center;
+
+  gap:5px;
+
+  border:
+    2px solid #ddd;
+
+  background:
+    #f7f3df;
+
+  color:
+    #111;
+
+  box-shadow:
+    0 5px 10px #0008;
+
+  font-family:
+    Arial,
+    sans-serif;
+
+  font-size:
+    20px;
+
+  font-weight:
+    900;
+}
+
+.card > div:last-child{
+  font-size:
+    24px;
+}
+
+.card.red{
+  color:
+    #b22020;
+}
+
+.card.down{
+  background:
+    repeating-linear-gradient(
+      45deg,
+      #132a62,
+      #132a62 6px,
+      #244590 6px,
+      #244590 12px
+    );
+
+  border:
+    4px solid #eee;
+}
+
+.card-slot{
+  border:
+    1px solid #ffffff44;
+
+  background:
+    #0002;
+}
+
+
+/* ================================================================
+   THREE PLAYER SEATS
+   ================================================================ */
+
+.player-area{
+  padding-top:
+    20px;
+}
+
+.player-title{
+  margin-bottom:
+    14px;
+
+  color:
+    var(--gold2);
+
+  text-align:center;
+
+  font-weight:
+    900;
+
+  letter-spacing:
+    .08em;
+}
+
+.seats{
+  display:grid;
+
+  grid-template-columns:
+    repeat(
+      3,
+      minmax(0,1fr)
+    );
+
+  gap:
+    10px;
+}
+
+.seat{
+  position:relative;
+
+  min-width:0;
+
+  min-height:
+    385px;
+
+  padding:
+    10px;
+
+  border:
+    1px solid #a78628;
+
+  border-radius:
+    14px;
+
+  background:
+    #032f1d88;
+
+  text-align:center;
+
+  transition:
+    box-shadow .15s ease,
+    border-color .15s ease;
+}
+
+.seat.active{
+  box-shadow:
+    0 0 0 3px #f2d65b,
+    0 0 20px #e7bd3b66;
+}
+
+.seat-title{
+  display:inline-block;
+
+  padding:
+    5px 12px;
+
+  border:
+    1px solid #d4af3777;
+
+  border-radius:
+    8px;
+
+  background:
+    #0b3420;
+
+  color:
+    var(--gold2);
+
+  font-family:
+    system-ui,
+    sans-serif;
+
+  font-size:
+    11px;
+
+  font-weight:
+    900;
+
+  letter-spacing:
+    .05em;
+}
+
+.seat.active .seat-title{
+  border-color:
+    var(--gold);
+
+  box-shadow:
+    0 0 12px #d4af3755;
+}
+
+.seat.blind .seat-title{
+  color:
+    #d9d5bc;
+}
+
+.hand-cards{
+  display:flex;
+
+  gap:6px;
+
+  justify-content:center;
+
+  align-items:center;
+
+  flex-wrap:wrap;
+
+  min-height:
+    92px;
+
+  margin-top:
+    9px;
+}
+
+
+/* ================================================================
+   BETTING AREA INSIDE EACH SEAT
+
+   Poker keeps variant-specific wager layouts.
+   ================================================================ */
+
+.bet-layout{
+  min-height:
+    205px;
+
+  display:flex;
+
+  flex-direction:column;
+
+  justify-content:flex-end;
+
+  gap:
+    10px;
+
+  margin-top:
+    8px;
+}
+
+
+/* ================================================================
+   SIDE BETS
+   ================================================================ */
+
+.side-row{
+  min-height:
+    84px;
+
+  display:flex;
+
+  justify-content:center;
+
+  align-items:center;
+
+  gap:
+    14px;
+
+  flex-wrap:wrap;
+}
+
+
+/* ================================================================
+   MAIN WAGERS
+   ================================================================ */
+
+.main-row{
+  display:grid;
+
+  justify-content:center;
+
+  gap:0;
+}
+
+.main-row.cols-1{
+  grid-template-columns:
+    minmax(
+      150px,
+      190px
+    );
+}
+
+.main-row.cols-2{
+  grid-template-columns:
+    repeat(
+      2,
+      minmax(
+        110px,
+        145px
+      )
+    );
+}
+
+.main-row.cols-3{
+  grid-template-columns:
+    repeat(
+      3,
+      minmax(
+        88px,
+        115px
+      )
+    );
+}
+
+
+/* ================================================================
+   WAGER SPOTS
+   ================================================================ */
+
+.wager{
+  position:relative;
+
+  display:flex;
+
+  align-items:center;
+
+  justify-content:center;
+
+  text-align:center;
+
+  padding:
+    8px;
+
+  border:
+    1px solid #a78628;
+
+  background:
+    #06492b;
+
+  color:
+    #fff;
+
+  font-family:
+    system-ui,
+    sans-serif;
+
+  font-size:
+    11px;
+
+  font-weight:
+    900;
+
+  cursor:pointer;
+
+  user-select:none;
+
+  transition:
+    background .12s ease,
+    filter .12s ease,
+    transform .12s ease;
+}
+
+.wager:hover:not(.locked){
+  background:
+    #0a6539;
+
+  transform:
+    translateY(-1px);
+}
+
+.wager.circle{
+  width:
+    78px;
+
+  height:
+    78px;
+
+  padding:
+    7px;
+
+  border-radius:
+    50%;
+}
+
+.wager.rect{
+  min-height:
+    72px;
+
+  border-radius:
+    8px;
+}
+
+.main-row .wager + .wager{
+  border-left:
+    0;
+}
+
+.main-row .wager:first-child{
+  border-radius:
+    8px 0 0 8px;
+}
+
+.main-row .wager:last-child{
+  border-radius:
+    0 8px 8px 0;
+}
+
+.main-row.cols-1 .wager{
+  border-radius:
+    8px;
+}
+
+.wager.locked{
+  opacity:
+    .45;
+
+  cursor:
+    default;
+}
+
+
+/* ================================================================
+   OLD AMOUNT TEXT
+
+   Part 2 will primarily use the gold badge.
+   Keep this hidden so we don't show the amount twice.
+   ================================================================ */
+
+.wager .amt{
+  display:none;
+}
+
+
+/* ================================================================
+   GOLD WAGER BADGE
+
+   Same visual idea used in Dueling 8s / finished Blackjack.
+   The existing JS currently generates .chip-stack, so we style it
+   as the badge immediately. Part 2 will clean up the JS as well.
+   ================================================================ */
+
+.wager .chip-stack{
+  position:absolute;
+
+  z-index:
+    20;
+
+  right:
+    4px;
+
+  top:
+    4px;
+
+  width:
+    auto;
+
+  height:
+    auto;
+
+  min-width:
+    0;
+
+  padding:
+    2px 6px;
+
+  border:
+    none;
+
+  border-radius:
+    99px;
+
+  background:
+    #d4af37 !important;
+
+  color:
+    #111 !important;
+
+  box-shadow:
+    none;
+
+  text-shadow:
+    none;
+
+  font-family:
+    system-ui,
+    sans-serif;
+
+  font-size:
+    9px;
+
+  line-height:
+    1.25;
+
+  font-weight:
+    900;
+
+  white-space:
+    nowrap;
+}
+
+.wager.circle .chip-stack{
+  right:
+    -2px;
+
+  top:
+    -2px;
+}
+
+
+/* ================================================================
+   PLAYER ACTIONS
+   ================================================================ */
+
+.actions{
+  display:flex;
+
+  gap:
+    6px;
+
+  justify-content:center;
+
+  flex-wrap:wrap;
+
+  margin-top:
+    10px;
+}
+
+.action{
+  min-width:
+    82px;
+
+  padding:
+    9px 11px;
+
+  border:
+    1px solid #9d7e26;
+
+  border-radius:
+    8px;
+
+  font-family:
+    system-ui,
+    sans-serif;
+
+  font-size:
+    11px;
+
+  font-weight:
+    900;
+
+  cursor:
+    pointer;
+}
+
+.action.primary{
+  background:
+    #d4af37;
+
+  color:
+    #241b06;
+}
+
+.action.secondary{
+  background:
+    #181b1b;
+
+  color:
+    #fff;
+}
+
+.action:disabled{
+  opacity:
+    .35;
+
+  cursor:
+    not-allowed;
+}
+
+
+/* ================================================================
+   PAI GOW SELECTABLE CARDS
+   ================================================================ */
+
+.paigow-selectable{
+  cursor:pointer;
+
+  transition:
+    transform .15s ease,
+    outline .15s ease,
+    box-shadow .15s ease;
+}
+
+.paigow-selectable:hover{
+  transform:
+    translateY(-5px);
+}
+
+.paigow-low-selected{
+  transform:
+    translateY(-10px);
+
+  outline:
+    3px solid #f0c85a;
+
+  box-shadow:
+    0 0 16px #f0c85a66;
+}
+
+.paigow-set-preview,
+.paigow-final-set{
+  background:
+    #041f1388;
+}
+
+
+/* ================================================================
+   BOTTOM DEAL BAR
+   ================================================================ */
+
+.slip{
+  display:grid;
+
+  grid-template-columns:
+    1fr
+    170px
+    260px;
+
+  gap:
+    8px;
+
+  align-items:stretch;
+
+  padding:
+    10px;
+
+  border:
+    1px solid #755e1d;
+
+  border-radius:
+    0 0 16px 16px;
+
+  background:
+    #07140f;
+
+  font-family:
+    system-ui,
+    sans-serif;
+}
+
+.on-table{
+  display:flex;
+
+  flex-direction:column;
+
+  justify-content:center;
+
+  padding-left:
+    4px;
+
+  font-size:
+    12px;
+}
+
+.on-table strong{
+  margin-top:
+    2px;
+
+  font-size:
+    17px;
+}
+
+.btn{
+  padding:
+    14px;
+
+  border:
+    1px solid #777;
+
+  border-radius:
+    8px;
+
+  font-family:
+    system-ui,
+    sans-serif;
+
+  font-weight:
+    900;
+
+  cursor:
+    pointer;
+}
+
+.btn:disabled{
+  opacity:
+    .35;
+
+  cursor:
+    not-allowed;
+}
+
+.clear{
+  background:
+    #181b1b;
+
+  color:
+    #ddd;
+}
+
+.deal{
+  border-color:
+    #d5a72c;
+
+  background:
+    linear-gradient(
+      #e4b53d,
+      #a9750b
+    );
+
+  color:
+    #fff;
+
+  font-size:
+    18px;
+}
+
+
+/* ================================================================
+   RULES
+   ================================================================ */
+
+.rules{
+  margin-top:
+    8px;
+
+  padding:
+    12px;
+
+  border:
+    1px solid #a37c20;
+
+  border-radius:
+    10px;
+
+  background:
+    #06351f;
+}
+
+.rules h3{
+  margin:
+    0 0 8px;
+
+  color:
+    var(--gold2);
+
+  text-align:center;
+}
+
+.note{
+  margin-bottom:
+    10px;
+
+  color:
+    #c9d3cb;
+
+  text-align:center;
+
+  font-family:
+    system-ui,
+    sans-serif;
+
+  font-size:
+    11px;
+
+  line-height:
+    1.5;
+}
+
+.pay{
+  display:grid;
+
+  grid-template-columns:
+    repeat(
+      3,
+      minmax(0,1fr)
+    );
+
+  gap:
+    6px;
+
+  font-family:
+    system-ui,
+    sans-serif;
+
+  font-size:
+    11px;
+}
+
+.pay > b{
+  grid-column:
+    1 / -1;
+
+  display:none;
+}
+
+.pay-row{
+  display:flex;
+
+  align-items:center;
+
+  justify-content:space-between;
+
+  gap:
+    10px;
+
+  min-height:
+    34px;
+
+  padding:
+    6px 8px;
+
+  border-bottom:
+    1px solid #ffffff18;
+}
+
+.pay-row span:last-child{
+  color:
+    var(--gold2);
+
+  font-weight:
+    900;
+
+  white-space:
+    nowrap;
+}
+
+
+/* ================================================================
+   RESPONSIVE
+   ================================================================ */
+
+@media(max-width:1250px){
+
+  .top{
+    grid-template-columns:
+      120px
+      1fr;
+  }
+
+  .top-right{
+    grid-column:
+      1 / -1;
+
+    justify-content:center;
+  }
+
+  .main{
+    grid-template-columns:
+      140px
+      minmax(0,1fr);
+  }
+
+  .chipbar{
+    justify-content:center;
+  }
+
+  .seats{
+    grid-template-columns:
+      1fr;
+  }
+
+  .seat{
+    min-height:
+      320px;
+  }
+
+  .pay{
+    grid-template-columns:
+      repeat(
+        2,
+        minmax(0,1fr)
+      );
+  }
+}
+
+
+@media(max-width:760px){
+
+  .shell{
+    padding:
+      8px;
+  }
+
+  .top{
+    display:flex;
+
+    flex-direction:column;
+  }
+
+  .top-right{
+    width:100%;
+
+    flex-direction:column;
+
+    align-items:center;
+  }
+
+  .main{
+    display:block;
+  }
+
+  .side{
+    display:grid;
+
+    grid-template-columns:
+      1fr
+      1fr;
+
+    margin-bottom:
+      10px;
+  }
+
+  .table{
+    padding:
+      12px;
+
+    border-radius:
+      20px;
+  }
+
+  .slip{
+    grid-template-columns:
+      1fr;
+  }
+
+  .pay{
+    grid-template-columns:
+      1fr;
+  }
+}
+
+</style>
+</head>
+
+
+<body>
+
+<div class="shell">
+
+
+  <!-- ============================================================
+       HEADER
+       ============================================================ -->
+
+  <div class="top">
+
+
+    <a
+      class="portal"
+      href="{{ url_for('portal') }}"
+    >
+      ← PORTAL
+    </a>
+
+
+    <div>
+
+      <span class="game-title">
+        {{ game_icon }}
+        {{ game_name|upper }}
+      </span>
+
+      <span
+        class="ready"
+        id="phaseLabel"
+      >
+        BETTING
+      </span>
+
+    </div>
+
+
+    <div class="top-right">
+
+
+      <div>
+
+        <div class="balance">
+
+          BALANCE
+
+          <strong id="balance">
+            {{ starting_credits }}
+          </strong>
+
+        </div>
+
+
+        <div
+          class="chipbar"
+          id="chipBar"
+        ></div>
+
+      </div>
+
+
+      <div class="reset-wrap">
+
+        <button
+          class="reset"
+          id="reset"
+          type="button"
+        >
+          ↻ RESET CREDITS
+        </button>
+
+        <div class="max-bet-note">
+          Max / deal:
+          {{ max_bet }}
+          cr
+        </div>
+
+      </div>
+
+
+    </div>
+
+
+  </div>
+
+
+  <!-- ============================================================
+       MAIN
+       ============================================================ -->
+
+  <div class="main">
+
+
+    <!-- ==========================================================
+         SIDEBAR
+         ========================================================== -->
+
+    <aside class="side">
+
+
+      <div class="panel">
+
+
+        <div class="metric">
+
+          <small>
+            ACTIVE SEATS
+          </small>
+
+          <strong id="activeMetric">
+            0
+          </strong>
+
+        </div>
+
+
+        <div class="metric">
+
+          <small>
+            TOTAL STAKE
+          </small>
+
+          <strong id="stakeMetric">
+            0
+          </strong>
+
+        </div>
+
+
+        <div class="metric">
+
+          <small>
+            TOTAL RETURN
+          </small>
+
+          <strong id="returnMetric">
+            0
+          </strong>
+
+        </div>
+
+
+        <div class="metric">
+
+          <small>
+            NET WIN
+          </small>
+
+          <strong
+            class="metric-value"
+            id="netMetric"
+          >
+            0
+          </strong>
+
+        </div>
+
+
+      </div>
+
+
+      <div class="panel history-panel">
+
+        <b>
+          ROUND HISTORY
+        </b>
+
+        <div
+          class="history"
+          id="history"
+        ></div>
+
+      </div>
+
+
+    </aside>
+
+
+    <!-- ==========================================================
+         GAME AREA
+         ========================================================== -->
+
+    <section class="center">
+
+
+      <!-- ========================================================
+           STATUS
+           ======================================================== -->
+
+      <div
+        id="status"
+        class="status"
+      >
+        Place your initial wagers.
+        Seat 1 is viewed;
+        Seats 2–3 follow Blind Betting / House Way.
+      </div>
+
+
+      <!-- ========================================================
+           POKER TABLE
+           ======================================================== -->
+
+      <div class="table">
+
+
+        <!-- ======================================================
+             DEALER
+             ====================================================== -->
+
+        <div class="dealer-zone">
+
+
+          <div
+            id="dealerTitle"
+            class="zone-title"
+          >
+            DEALER
+          </div>
+
+
+          <div
+            id="dealerCards"
+            class="dealer-cards"
+          ></div>
+
+
+          <!-- ====================================================
+               COMMUNITY
+               ==================================================== -->
+
+          <div class="community-zone">
+
+
+            <div
+              id="communityTitle"
+              class="community-title"
+            ></div>
+
+
+            <div
+              id="community"
+              class="community-cards"
+            ></div>
+
+
+          </div>
+
+
+        </div>
+
+
+        <!-- ======================================================
+             PLAYERS
+             ====================================================== -->
+
+        <div class="player-area">
+
+
+          <div class="player-title">
+            PLAYERS · 3 SEATS
+          </div>
+
+
+          <!--
+            poker_solo.js dynamically builds all three seats.
+
+            Seat 1 = VIEWED
+            Seat 2 = BLIND
+            Seat 3 = BLIND
+
+            The JS also dynamically builds the correct wager
+            arrangement for the current Poker variant.
+          -->
+
+          <div
+            id="seats"
+            class="seats"
+          ></div>
+
+
+        </div>
+
+
+      </div>
+
+
+      <!-- ========================================================
+           DEAL BAR
+           ======================================================== -->
+
+      <div class="slip">
+
+
+        <div class="on-table">
+
+          ON TABLE
+
+          <strong id="pending">
+            0
+          </strong>
+
+        </div>
+
+
+        <button
+          id="clear"
+          class="btn clear"
+          type="button"
+          disabled
+        >
+          ✕ CLEAR BETS
+        </button>
+
+
+        <button
+          id="deal"
+          class="btn deal"
+          type="button"
+          disabled
+        >
+          DEAL
+        </button>
+
+
+      </div>
+
+
+      <!-- ========================================================
+           RULES
+           ======================================================== -->
+
+      <div class="rules">
+
+
+        <h3>
+          {{ game_name|upper }} RULES
+        </h3>
+
+
+        <div
+          id="rulesNote"
+          class="note"
+        ></div>
+
+
+        <div
+          id="pay"
+          class="pay"
+        ></div>
+
+
+      </div>
+
+
+    </section>
+
+
+  </div>
+
+
+</div>
+
+
+<!-- ==============================================================
+     CONFIGURATION
+     ============================================================== -->
+
+<script>
+
+window.POKER_GAME =
+  {{ game|tojson }};
+
+window.POKER_MAX =
+  {{ max_bet|tojson }};
+
+window.POKER_START =
+  {{ starting_credits|tojson }};
+
+</script>
+
+
+<!-- ==============================================================
+     CONTROLLER
+
+     Part 2 will replace poker_solo.js while retaining this path.
+     ============================================================== -->
+
+<script
+  src="{{ url_for(
+    'static',
+    filename='js/poker_solo.js'
+  ) }}?v={{ static_v|default('1') }}"
+></script>
+
+
+</body>
+
+</html>

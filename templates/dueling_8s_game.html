@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{{ game_name }} · ETG Sim</title>
+<style>
+:root{--bg:#04110c;--panel:#071a13;--felt:#064d2c;--felt2:#08703d;--gold:#d5a72c;--gold2:#f4dc83;--text:#f7f4e7;--muted:#a8b9aa;--red:#a52b27}
+*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(circle at 50% 0,#0b4329,#020b08 70%);color:var(--text);font-family:Georgia,"Times New Roman",serif}
+.shell{min-height:100vh;padding:14px}
+.top{display:grid;grid-template-columns:150px 1fr 590px;gap:16px;align-items:start}
+.portal,.reset{border:1px solid #a27d24;border-radius:10px;padding:13px;background:#06150f;color:#fff;text-decoration:none;font-weight:700}
+.game-title{font-size:34px;color:var(--gold2);font-weight:900;letter-spacing:.04em}
+.ready{font-size:12px;border:1px solid #967821;border-radius:999px;padding:7px 14px;margin-left:12px}
+.balance{text-align:center;color:var(--gold2);font-size:14px}.balance strong{display:block;font-size:28px}
+.chipbar{display:flex;gap:8px;justify-content:flex-end;margin-top:8px}
+.chip{width:58px;height:58px;border-radius:50%;border:3px dashed #eee;color:#fff;font-weight:900;cursor:pointer}
+.chip.active{outline:3px solid var(--gold)}
+.main{display:grid;grid-template-columns:170px minmax(800px,1fr);gap:12px;margin-top:12px}
+.side{display:flex;flex-direction:column;gap:10px}
+.panel{background:#06150fdd;border:1px solid #7d6520;border-radius:10px;padding:12px}
+.metric{padding:10px 0;border-bottom:1px solid #ffffff15}.metric:last-child{border:0}
+.metric small{display:block;color:#ddd}.metric strong{font-size:20px}
+.net{color:#65ef8a}.history{min-height:210px;font-family:system-ui,sans-serif;font-size:12px;color:#b7c4ba}
+.center{min-width:0}
+.table{background:radial-gradient(circle at 50% 20%,#08703d,#043f25 75%);border:3px solid #a98427;border-radius:30px;padding:22px;box-shadow:0 14px 30px #0008;min-height:600px}
+.dealer{text-align:center;border-bottom:2px solid #d5a72c55;padding-bottom:18px}
+.dealer-title,.player-title{color:var(--gold2);font-weight:900;letter-spacing:.08em}
+.cards{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:12px 0}
+.card{width:72px;height:102px;border-radius:8px;background:#f7f3df;color:#111;border:2px solid #ddd;box-shadow:0 5px 10px #0008;display:flex;flex-direction:column;justify-content:space-between;padding:7px;font-family:Arial,sans-serif;font-weight:900;font-size:22px}
+.card.red{color:#b22020}.card.permanent{outline:3px solid #e2b737}
+.card .suit{text-align:right;font-size:25px}
+.player-area{padding-top:20px}.seat-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:16px}.seat{border:1px solid #a78628;border-radius:14px;padding:10px;background:#032f1d88;min-width:0}.seat.active-seat{box-shadow:0 0 0 3px #f2d65b,0 0 20px #e7bd3b66}.seat-title{text-align:center;color:var(--gold2);font-weight:900;letter-spacing:.06em}.seat-hands{display:flex;gap:7px;justify-content:center;flex-wrap:wrap;margin-top:8px}.seat .hand{min-width:150px;flex:1 1 150px}.seat-bets{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;margin-top:9px}.seat-bets .bet{min-height:66px;padding:5px}.seat-bets .bet strong{font-size:13px}.seat-bets .bet small{font-size:9px}
+.hands{display:flex;justify-content:center;gap:14px;flex-wrap:wrap}
+.hand{min-width:240px;border:1px solid #b89534;border-radius:12px;padding:12px;background:#032f1d99;text-align:center}
+.hand.active{box-shadow:0 0 0 3px #f2d65b,0 0 20px #e7bd3b88}
+.hand.done{opacity:.82}
+.hand-total{font-size:20px;font-weight:900;color:#fff0aa}
+.bet-board{display:none}
+.bet{position:relative;background:#06492b;border:1px solid #a78628;color:#fff;border-radius:8px;min-height:82px;padding:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;cursor:pointer}
+.bet:hover{background:#0a6539}.bet strong{font-size:16px}.bet small{font-size:10px;color:#eadc8a;margin-top:4px}
+.badge{position:absolute;right:4px;top:4px;background:#d4af37;color:#111;border-radius:99px;padding:2px 6px;font-size:9px;font-weight:900}
+.actionbar{display:grid;grid-template-columns:1fr 170px 260px;gap:8px;background:#07140f;padding:10px;border-radius:0 0 16px 16px;border:1px solid #755e1d}
+.actionbar button,.play-actions button{padding:14px;border-radius:8px;border:1px solid #777;font-weight:900;cursor:pointer}
+.clear{background:#181b1b;color:#ddd}.deal{background:linear-gradient(#e4b53d,#a9750b);color:#fff;font-size:18px}
+.play-actions{display:flex;gap:7px;justify-content:center;flex-wrap:wrap;margin-top:14px}
+.play-actions button{background:#10271d;color:#fff;border-color:#9d7e26;min-width:100px}
+.play-actions button:disabled{opacity:.35;cursor:not-allowed}
+.double-box{display:none;align-items:center;justify-content:center;gap:7px;margin-top:10px}
+.double-box.active{display:flex}.double-box input{width:130px;padding:10px;border-radius:7px;border:1px solid #a78628;background:#07140f;color:#fff}
+.rules{margin-top:8px;border:1px solid #a37c20;border-radius:10px;padding:12px;background:#06351f}
+.rules h3{text-align:center;color:var(--gold2);margin:0 0 8px}.rules-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;font-family:system-ui,sans-serif;font-size:12px}
+.message{text-align:center;min-height:26px;color:#f6dc7b;font-family:system-ui,sans-serif;font-weight:700;margin-top:8px}
+@media(max-width:1100px){.seat-grid{grid-template-columns:1fr}.seat-bets{grid-template-columns:repeat(5,1fr)}.top{grid-template-columns:120px 1fr}.top-right{grid-column:1/-1}.main{grid-template-columns:130px 1fr}.chipbar{justify-content:center}.rules-grid{grid-template-columns:1fr 1fr}.bet-board{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+<div class="shell">
+  <div class="top">
+    <a class="portal" href="{{ url_for('portal') }}">← PORTAL</a>
+    <div><span class="game-title">{{ game_icon }} {{ game_name|upper }}</span><span class="ready" id="phaseLabel">BETTING</span></div>
+    <div class="top-right"><div class="balance">BALANCE<strong id="balanceDisplay">0</strong></div><div class="chipbar" id="chipBar"></div></div>
+  </div>
+
+  <div class="main">
+    <aside class="side">
+      <div class="panel">
+        <div class="metric"><small>TOTAL STAKE</small><strong id="stakeMetric">0</strong></div>
+        <div class="metric"><small>TOTAL RETURN</small><strong id="returnMetric">0</strong></div>
+        <div class="metric"><small>NET WIN</small><strong class="net" id="netMetric">0</strong></div>
+      </div>
+      <div class="panel history"><b>ROUND HISTORY</b><div id="history">No rounds yet</div></div>
+    </aside>
+
+    <section class="center">
+      <div class="table">
+        <div class="dealer">
+          <div class="dealer-title">DEALER · PERMANENT 8♠</div>
+          <div class="cards" id="dealerCards"></div>
+          <div id="dealerTotal">Dealer total —</div>
+        </div>
+
+        <div class="player-area">
+          <div class="player-title" style="text-align:center">PLAYERS · 3 SEATS</div>
+          <div class="seat-grid" id="seatGrid">
+            {% for seat in range(3) %}
+            <div class="seat" id="seat{{ seat }}" data-seat="{{ seat }}">
+              <div class="seat-title">SEAT {{ seat + 1 }}</div>
+              <div class="seat-hands" id="seat{{ seat }}Hands"></div>
+              <div class="seat-bets">
+                <div class="bet" data-seat="{{ seat }}" data-wager="main"><strong>MAIN</strong><small>Required to play</small></div>
+                <div class="bet" data-seat="{{ seat }}" data-wager="678"><strong>6 · 7 · 8</strong><small>Bonus</small></div>
+                <div class="bet" data-seat="{{ seat }}" data-wager="superb_8s"><strong>SUPERB 8s</strong><small>Consecutive 8s</small></div>
+                <div class="bet" data-seat="{{ seat }}" data-wager="tie_18"><strong>TIE ON 18</strong><small>18 / 18</small></div>
+                <div class="bet" data-seat="{{ seat }}" data-wager="21_plus"><strong>21+</strong><small>Dealer bust cards</small></div>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+          <div class="message" id="message"></div>
+
+          <div class="play-actions" id="playActions">
+            <button id="hitBtn">HIT</button>
+            <button id="standBtn">STAND</button>
+            <button id="doubleBtn">DOUBLE</button>
+            <button id="splitBtn">SPLIT 8s</button>
+            <button id="surrenderBtn">SURRENDER</button>
+          </div>
+
+          <div class="double-box" id="doubleBox">
+            <label for="doubleAmount">DOUBLE AMOUNT</label>
+            <input id="doubleAmount" type="number" min="1" step="1">
+            <button id="confirmDoubleBtn">CONFIRM DOUBLE</button>
+          </div>
+
+        </div>
+      </div>
+
+      <div class="actionbar">
+        <div>ON TABLE<br><strong id="pendingTotal">0</strong></div>
+        <button class="clear" id="clearBtn">✕ CLEAR BETS</button>
+        <button class="deal" id="dealBtn" disabled>DEAL</button>
+      </div>
+
+      <div class="rules">
+        <h3>DUELING 8'S 21+ RULES</h3>
+        <div class="rules-grid">
+          <div>• Player and Dealer each begin with a permanent 8♠.<br>• Dealer draws until 17 or higher.</div>
+          <div>• Only a pair of 8s may be split.<br>• Maximum four player hands.</div>
+          <div>• Double may be any amount from table minimum up to the original wager.<br>• Surrender returns half the original wager.</div>
+          <div>• Side wagers: 6-7-8, Superb 8s, Tie on 18 and 21+.<br>• Backend result is authoritative.</div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <button class="reset" id="resetBtn" style="position:fixed;right:14px;top:14px">↻ RESET CREDITS</button>
+</div>
+
+<script>
+window.DUELING8_GAME = {{ game|tojson }};
+window.DUELING8_MAX = {{ max_bet|tojson }};
+window.DUELING8_START = {{ starting_credits|tojson }};
+</script>
+<script src="{{ url_for('static', filename='js/dueling_8s_solo.js') }}?v={{ static_v|default('1') }}"></script>
+</body>
+</html>

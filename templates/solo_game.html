@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>ETG Sim — Solo {{ game_display }}</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/board.css') }}?v={{ static_v }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/animations.css') }}?v={{ static_v }}">
+<style>
+  .back-link {
+    display: inline-block; margin-bottom: 2px;
+    font-size: 12px; color: var(--muted); text-decoration: none;
+  }
+  .back-link:hover { color: var(--gold-soft); }
+  .bet-slip-bar {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 10px; margin-top: 10px; flex-wrap: wrap;
+  }
+  .bet-slip-total { font-size: 13px; color: var(--muted); }
+  .bet-slip-total strong { color: var(--gold-soft); }
+  .bet-slip-actions { display: flex; gap: 8px; }
+  .btn {
+    border: none; border-radius: 10px; padding: 10px 18px;
+    font-weight: 700; font-size: 13px; letter-spacing: 0.02em;
+    cursor: pointer; transition: transform 0.08s ease, opacity 0.12s ease;
+  }
+  .btn:active { transform: scale(0.97); }
+  .btn:disabled { opacity: 0.45; cursor: default; transform: none; }
+  .btn-spin  { background: linear-gradient(180deg, var(--gold-soft), var(--gold)); color: #24190a; min-width: 90px; }
+  .btn-clear { background: rgba(255,255,255,0.06); color: var(--text); border: 1px solid rgba(255,255,255,0.14); }
+  .btn-reset { background: rgba(185,28,28,0.15); color: #ff9b9b; border: 1px solid rgba(185,28,28,0.4); }
+  .solo-history { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 10px; }
+  .hist-badge {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-width: 26px; height: 26px; padding: 0 6px;
+    border-radius: 6px; font-size: 12px; font-weight: 700;
+    background: rgba(5,20,10,0.75); border: 1px solid rgba(100,180,80,0.22);
+  }
+  .hist-badge.red   { background: rgba(217,74,74,0.22); border-color: rgba(217,74,74,0.5); color: #ffb4b4; }
+  .hist-badge.black { background: rgba(18,18,22,0.8);   border-color: rgba(255,255,255,0.2); color: #dde4ee; }
+  .hist-badge.green { background: rgba(45,184,90,0.2);  border-color: rgba(45,184,90,0.5);  color: #8fffb0; }
+  .hist-badge.blue  { background: rgba(74,144,217,0.2); border-color: rgba(74,144,217,0.5); color: #aad0ff; }
+  .result-breakdown { margin-top: 10px; font-size: 12px; }
+  .result-breakdown-row {
+    display: flex; justify-content: space-between; gap: 10px;
+    padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,0.06);
+    color: var(--muted);
+  }
+  .result-breakdown-row.win { color: #8fffb0; }
+  .result-breakdown-row.win .amt { color: #8fffb0; font-weight: 700; }
+  .result-breakdown-row .amt { color: var(--muted); }
+
+</style>
+</head>
+<body>
+  <header>
+    <div class="who">
+      <a class="back-link" href="{{ url_for('portal') }}">← Portal</a><br>
+      Solo — <span style="color:var(--gold-soft); font-weight:600;">{{ game_display }}</span>
+    </div>
+    <div class="balance">
+      <span class="lbl">Credits</span>
+      <span class="val" id="balanceDisplay">0</span>
+    </div>
+  </header>
+  <main>
+    <div class="board-col">
+      <div class="table-info">
+        <div>
+          <div class="g">{{ game_display }}</div>
+          <div class="r">Single player — plays instantly, no waiting for other players</div>
+        </div>
+        <div class="phase-badge" id="phaseLabel">READY</div>
+      </div>
+      <div class="status" id="statusBar">
+        <strong>Place your bets</strong>
+        <div>Tap chips onto the table, then
+          {% if game == "craps" %}hit Throw.{% else %}hit Spin.{% endif %}
+        </div>
+      </div>
+      <div id="animArea" class="anim-area" style="display:none;"></div>
+      <div id="resultArea" style="display:none;"></div>
+      <div id="bettingArea"></div>
+      <div class="bet-slip-bar">
+        <div class="bet-slip-total">On the table: <strong id="pendingTotal">0</strong> credits</div>
+        <div class="bet-slip-actions">
+          <button class="btn btn-clear" id="clearBtn" type="button">Clear</button>
+          <button class="btn btn-spin"  id="spinBtn"  type="button" disabled>
+            {% if game == "craps" %}Throw{% else %}Spin{% endif %}
+          </button>
+        </div>
+      </div>
+      <div class="solo-history" id="soloHistory"></div>
+    </div>
+    <aside class="side-col">
+      <div class="chip-section">
+        <div class="lbl">Chip value</div>
+        <div id="chipBar"></div>
+      </div>
+      <div class="max-bet-note">Max stake per spin: {{ max_bet }} credits</div>
+
+      <div class="leaderboard">
+        <h2>Solo balance</h2>
+        <div style="padding: 10px 4px; font-size: 13px; color: var(--muted);">
+          Starting credits: {{ starting_credits }}<br>
+          This balance lives only in this browser and never touches the
+          Multiplayer Event leaderboard.
+        </div>
+        <button class="btn btn-reset" id="resetBtn" type="button" style="width:100%; margin-top:6px;">
+          Reset to {{ starting_credits }}
+        </button>
+      </div>
+    </aside>
+  </main>
+  <script>
+    window.SOLO_GAME = {{ game|tojson }};
+    window.SOLO_MAX_BET = {{ max_bet|tojson }};
+    window.SOLO_STARTING_CREDITS = {{ starting_credits|tojson }};
+  </script>
+  <script type="module" src="{{ url_for('static', filename='js/solo.js') }}?v={{ static_v }}"></script>
+</body>
+</html>

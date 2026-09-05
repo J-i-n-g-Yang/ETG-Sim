@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>ETG Sim — Join</title>
+<style>
+  :root {
+    --bg: #0b0f14;
+    --panel: #12181f;
+    --panel-2: #1a222c;
+    --gold: #d4af37;
+    --gold-soft: #f4e5a3;
+    --green: #1a6b35;
+    --red: #b91c1c;
+    --text: #e9edf1;
+    --muted: #8a97a5;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    height: 100%;
+    margin: 0;
+    background:
+      radial-gradient(circle at 50% -10%, #1c2733 0%, var(--bg) 55%);
+    color: var(--text);
+    font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+  }
+  body {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+  .card {
+    width: 100%;
+    max-width: 420px;
+    background: var(--panel);
+    border: 1px solid #232d38;
+    border-radius: 16px;
+    padding: 32px 28px 28px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  }
+  .brand {
+    text-align: center;
+    margin-bottom: 24px;
+  }
+  .brand .chip {
+    width: 56px;
+    height: 56px;
+    margin: 0 auto 10px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, var(--gold-soft), var(--gold) 60%, #8b6914 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    color: #2a1e00;
+    font-size: 20px;
+    box-shadow: 0 0 0 4px rgba(212,175,55,0.15);
+  }
+  .brand h1 {
+    font-size: 20px;
+    letter-spacing: 0.06em;
+    margin: 0 0 4px;
+    color: var(--gold-soft);
+    text-transform: uppercase;
+  }
+  .brand p {
+    margin: 0;
+    color: var(--muted);
+    font-size: 13px;
+  }
+  label {
+    display: block;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--muted);
+    margin: 16px 0 6px;
+  }
+  input[type="text"], input[type="password"] {
+    width: 100%;
+    padding: 12px 14px;
+    background: var(--panel-2);
+    border: 1px solid #2a3542;
+    border-radius: 10px;
+    color: var(--text);
+    font-size: 15px;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  input[type="text"]:focus, input[type="password"]:focus {
+    border-color: var(--gold);
+  }
+  button#joinBtn {
+    width: 100%;
+    margin-top: 22px;
+    padding: 13px;
+    border: none;
+    border-radius: 10px;
+    background: linear-gradient(180deg, var(--gold-soft), var(--gold));
+    color: #24190a;
+    font-weight: 700;
+    font-size: 15px;
+    letter-spacing: 0.03em;
+    cursor: pointer;
+    transition: transform 0.08s ease;
+  }
+  button#joinBtn:active { transform: scale(0.98); }
+  button#joinBtn:disabled { opacity: 0.6; cursor: default; }
+
+  .status {
+    margin-top: 16px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    font-size: 13px;
+    display: none;
+  }
+  .status.bad  { display: block; background: rgba(185,28,28,0.15); border: 1px solid rgba(185,28,28,0.4); color: #ff9b9b; }
+  .status.good { display: block; background: rgba(26,107,53,0.18); border: 1px solid rgba(26,107,53,0.5); color: #9be8ac; }
+
+  .foot {
+    margin-top: 24px;
+    text-align: center;
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.04em;
+  }
+  .links {
+    margin-top: 10px;
+    text-align: center;
+  }
+  .links a {
+    color: var(--muted);
+    font-size: 12px;
+    text-decoration: none;
+    margin: 0 8px;
+  }
+  .links a:hover { color: var(--gold-soft); }
+</style>
+</head>
+<body>
+  <div class="card">
+    <div class="brand">
+      <div class="chip">ETG</div>
+      <h1>Townhall Casino</h1>
+      <p>Enter your name and the event code to join</p>
+    </div>
+
+    <form id="joinForm">
+      <label for="displayName">Display name</label>
+      <input type="text" id="displayName" maxlength="50" placeholder="e.g. Alex R." autocomplete="off" required>
+
+      <label for="eventCode">Event code</label>
+      <input type="text" id="eventCode" placeholder="Enter code" autocomplete="off" required>
+
+      <button type="submit" id="joinBtn">Join the table</button>
+    </form>
+
+    <div class="status" id="statusMsg"></div>
+
+    <div class="foot">Starting credits are the same for every player</div>
+    <div class="links">
+      <a href="{{ url_for('projector') }}">Projector</a>
+      <a href="{{ url_for('control_page') }}">Operator</a>
+    </div>
+  </div>
+
+  <script type="module">
+    import api from "{{ url_for('static', filename='js/api.js') }}?v={{ static_v }}";
+
+    const form   = document.getElementById("joinForm");
+    const btn    = document.getElementById("joinBtn");
+    const status = document.getElementById("statusMsg");
+    const nameEl = document.getElementById("displayName");
+    const codeEl = document.getElementById("eventCode");
+
+    function showStatus(type, msg) {
+      status.className = `status ${type}`;
+      status.textContent = msg;
+    }
+
+    // If already joined, skip straight to the game
+    const existingId = localStorage.getItem("etg_user_id");
+    const existingName = localStorage.getItem("etg_user_name");
+    if (existingId && existingName) {
+      nameEl.value = existingName;
+    }
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const display_name = nameEl.value.trim();
+      const event_code    = codeEl.value.trim();
+      if (!display_name || !event_code) return;
+
+      btn.disabled = true;
+      btn.textContent = "Joining…";
+      status.className = "status";
+
+      try {
+        const r = await api.join(display_name, event_code);
+        localStorage.setItem("etg_user_id", r.user_id);
+        localStorage.setItem("etg_user_name", r.display_name);
+        localStorage.setItem("etg_balance", r.credits);
+        showStatus("good", "Welcome — taking you to the table…");
+        window.location.href = "{{ url_for('play') }}";
+      } catch (err) {
+        showStatus("bad", err.message || "Could not join — check the event code");
+        btn.disabled = false;
+        btn.textContent = "Join the table";
+      }
+    });
+  </script>
+</body>
+</html>

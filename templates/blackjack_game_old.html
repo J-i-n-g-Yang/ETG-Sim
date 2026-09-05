@@ -1,0 +1,1087 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta
+  name="viewport"
+  content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"
+>
+
+<title>ETG Sim — {{ game_name }}</title>
+
+<link
+  rel="stylesheet"
+  href="{{ url_for('static', filename='css/board.css') }}?v={{ static_v }}"
+>
+
+<style>
+:root {
+  --bg: #0b0f14;
+  --panel: #12181f;
+  --panel2: #1a222c;
+
+  --felt-light: #1a6b35;
+  --felt-mid: #0d4a22;
+  --felt-edge: #072e15;
+
+  --gold: #d4af37;
+  --gold-bright: #f4e5a3;
+
+  --text: #e9edf1;
+  --muted: #8a97a5;
+
+  --win: #4ade80;
+  --lose: #f87171;
+  --push: #94a3b8;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+
+  background: var(--bg);
+  color: var(--text);
+
+  font-family:
+    "Segoe UI",
+    system-ui,
+    sans-serif;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+}
+
+/* ================================================================
+   HEADER
+   ================================================================ */
+
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  padding: 10px 16px;
+
+  background: #0a0f15;
+  border-bottom: 1px solid #2a313a;
+}
+
+.back-link {
+  display: block;
+
+  margin-bottom: 3px;
+
+  font-size: 11px;
+  color: var(--muted);
+
+  text-decoration: none;
+}
+
+.back-link:hover {
+  color: var(--gold-bright);
+}
+
+.game-title {
+  display: block;
+
+  color: var(--gold-bright);
+
+  font-weight: 700;
+}
+
+.bal-box {
+  text-align: right;
+}
+
+.bal-box .lbl {
+  font-size: 10px;
+  color: var(--muted);
+}
+
+.bal-box .val {
+  font-size: 20px;
+  color: var(--gold-bright);
+
+  font-weight: 800;
+}
+
+/* ================================================================
+   MAIN LAYOUT
+   ================================================================ */
+
+main {
+  flex: 1;
+
+  display: flex;
+
+  min-height: 0;
+}
+
+.table-col {
+  flex: 1;
+
+  min-width: 0;
+
+  padding: 12px;
+
+  display: flex;
+  flex-direction: column;
+
+  gap: 9px;
+
+  overflow: auto;
+}
+
+aside {
+  width: 360px;
+  flex: 0 0 360px;
+
+  padding: 16px;
+
+  background: var(--panel);
+
+  border-left: 1px solid #28313a;
+
+  overflow: auto;
+}
+
+/* ================================================================
+   STATUS
+   ================================================================ */
+
+.status-bar {
+  padding: 10px 14px;
+
+  border: 1px solid #3b4650;
+  border-radius: 10px;
+
+  background: #151c23;
+}
+
+.status-bar.good {
+  border-color: #287c49;
+}
+
+.status-bar.bad {
+  border-color: #913d3d;
+}
+
+.status-bar.warn {
+  border-color: #8c7430;
+}
+
+/* ================================================================
+   TABLE FELT
+   ================================================================ */
+
+.felt {
+  height: 414px;
+  min-height: 414px;
+  max-height: 414px;
+
+  padding: 15px;
+
+  border: 3px solid #7d692c;
+  border-radius: 18px;
+
+  background:
+    radial-gradient(
+      ellipse at top,
+      var(--felt-light),
+      var(--felt-mid) 55%,
+      var(--felt-edge)
+    );
+
+  display: flex;
+  flex-direction: column;
+
+  gap: 12px;
+}
+
+/* ================================================================
+   DEALER
+   ================================================================ */
+
+.dealer-zone {
+  text-align: center;
+
+  min-height: 100px;
+  flex: 0 0 100px;
+}
+
+.dealer-label {
+  font-size: 10px;
+  color: var(--muted);
+}
+
+.dealer-hand,
+.hand-cards {
+  display: flex;
+
+  gap: 6px;
+
+  justify-content: center;
+  align-items: center;
+
+  flex-wrap: wrap;
+
+  min-height: 62px;
+}
+
+.dealer-badge,
+.hand-total {
+  text-align: center;
+
+  margin-top: 4px;
+
+  font-size: 11px;
+  color: #cbd5df;
+}
+
+/* ================================================================
+   SEATS
+   ================================================================ */
+
+.seats-row {
+  display: flex;
+
+  gap: 10px;
+
+  flex: 1;
+
+  min-height: 245px;
+  height: 245px;
+  max-height: 245px;
+}
+
+.seat {
+  flex: 1;
+
+  min-height: 245px;
+  height: 245px;
+  max-height: 245px;
+
+  overflow: auto;
+
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 12px;
+
+  padding: 8px;
+
+  background: rgba(0,0,0,.18);
+}
+
+.seat.active {
+  border-color: var(--gold);
+
+  box-shadow:
+    0 0 12px rgba(212,175,55,.2);
+}
+
+.seat-num {
+  text-align: center;
+
+  font-size: 10px;
+  color: var(--muted);
+
+  text-transform: uppercase;
+}
+
+.split-hands {
+  display: flex;
+
+  gap: 7px;
+
+  align-items: stretch;
+  justify-content: center;
+
+  flex-wrap: wrap;
+}
+
+.player-hand {
+  min-width: 112px;
+
+  flex: 1;
+
+  border: 1px solid rgba(255,255,255,.09);
+  border-radius: 9px;
+
+  padding: 6px;
+}
+
+.player-hand.current {
+  border-color: var(--gold);
+}
+
+.hand-label {
+  text-align: center;
+
+  font-size: 9px;
+  color: var(--muted);
+}
+
+.seat-result {
+  text-align: center;
+
+  margin-top: 4px;
+
+  font-weight: 800;
+  font-size: 11px;
+}
+
+.win {
+  color: var(--win);
+}
+
+.lose {
+  color: var(--lose);
+}
+
+.push {
+  color: var(--push);
+}
+
+/* ================================================================
+   CARDS
+   ================================================================ */
+
+.card {
+  width: 42px;
+  height: 62px;
+
+  border-radius: 7px;
+
+  background: #fffaf0;
+  color: #151515;
+
+  border: 1px solid #cfc7b4;
+
+  display: flex;
+  flex-direction: column;
+
+  align-items: center;
+  justify-content: center;
+
+  font-weight: 800;
+
+  box-shadow:
+    0 2px 6px #0008;
+}
+
+.card.red {
+  color: #c0392b;
+}
+
+.card.facedown {
+  background:
+    linear-gradient(
+      145deg,
+      #1e3a5f,
+      #0d2240
+    );
+}
+
+.rank {
+  font-size: 15px;
+}
+
+.suit {
+  font-size: 13px;
+}
+
+/* ================================================================
+   CARD ANIMATIONS
+   ================================================================ */
+
+@keyframes bjDealIn {
+  0% {
+    opacity: 0;
+
+    transform:
+      translate(90px,-80px)
+      rotate(8deg)
+      scale(.78);
+  }
+
+  70% {
+    opacity: 1;
+
+    transform:
+      translate(-3px,3px)
+      rotate(-1deg)
+      scale(1.03);
+  }
+
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes bjFlipIn {
+  0% {
+    transform: rotateY(90deg);
+    opacity: .35;
+  }
+
+  100% {
+    transform: rotateY(0);
+    opacity: 1;
+  }
+}
+
+.card.deal-in {
+  animation:
+    bjDealIn
+    .34s
+    cubic-bezier(.2,.8,.3,1)
+    both;
+}
+
+.card.flip-in {
+  animation:
+    bjFlipIn
+    .28s
+    ease-out
+    both;
+}
+
+/* ================================================================
+   ACTION BUTTONS
+   ================================================================ */
+
+.action-bar {
+  display: flex;
+
+  gap: 6px;
+
+  justify-content: center;
+  align-content: flex-start;
+
+  flex-wrap: wrap;
+
+  min-height: 74px;
+
+  padding-top: 4px;
+}
+
+.act-btn,
+.btn,
+.sb-btn {
+  border: 0;
+  border-radius: 9px;
+
+  padding: 8px 12px;
+
+  font-weight: 800;
+
+  cursor: pointer;
+}
+
+.act-btn:disabled,
+.btn:disabled {
+  opacity: .3;
+  cursor: default;
+}
+
+.act-hit {
+  background: #43c879;
+}
+
+.act-stand {
+  background: #6b9ee8;
+}
+
+.act-double {
+  background: #d4af37;
+}
+
+.act-split {
+  background: #9b59b6;
+  color: white;
+}
+
+.act-surrender {
+  background: #b94a4a;
+  color: white;
+}
+
+.act-insurance {
+  background: #3f8ca8;
+  color: white;
+}
+
+.act-even {
+  background: #d48a37;
+  color: #24190a;
+}
+
+.act-rescue {
+  background: #c77735;
+  color: #211408;
+}
+
+/* ================================================================
+   BETTING PANEL
+   ================================================================ */
+
+.bet-zone-wrap {
+  min-height: 210px;
+  height: 210px;
+  max-height: 210px;
+
+  overflow: hidden;
+
+  background: var(--panel2);
+
+  border: 1px solid #303944;
+  border-radius: 13px;
+
+  padding: 12px;
+}
+
+.bet-zone-wrap.playing-hidden {
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.bet-zone-title {
+  margin-bottom: 8px;
+
+  font-size: 10px;
+  color: var(--muted);
+}
+
+.bz-seats {
+  display: flex;
+
+  gap: 10px;
+
+  min-height: 166px;
+
+  align-items: stretch;
+}
+
+.bz-seat-col {
+  flex: 1;
+
+  min-height: 166px;
+
+  display: flex;
+  flex-direction: column;
+
+  justify-content: flex-start;
+}
+
+.bz-seat-lbl {
+  text-align: center;
+
+  font-size: 9px;
+  color: var(--muted);
+}
+
+.bz-layout-row {
+  display: flex;
+
+  gap: 6px;
+
+  align-items: center;
+
+  min-height: 142px;
+}
+
+.bz-centre {
+  flex: 1;
+
+  min-height: 136px;
+}
+
+.bet-spot {
+  position: relative;
+
+  cursor: pointer;
+
+  text-align: center;
+
+  border: 1px solid #48604d;
+  border-radius: 9px;
+
+  background: #10251a;
+
+  padding: 8px;
+
+  user-select: none;
+}
+
+.bet-spot:hover {
+  filter: brightness(1.12);
+}
+
+.bz-pair {
+  border-radius: 9px 9px 0 0;
+
+  color: var(--gold-bright);
+
+  font-size: 10px;
+}
+
+.bz-main {
+  min-height: 96px;
+
+  border-radius: 0 0 9px 9px;
+
+  display: flex;
+
+  align-items: center;
+  justify-content: center;
+}
+
+.bz-main.full-radius {
+  border-radius: 9px;
+}
+
+.bz-circle {
+  width: 62px;
+  height: 62px;
+
+  flex: 0 0 62px;
+
+  border-radius: 50%;
+
+  display: flex;
+
+  align-items: center;
+  justify-content: center;
+
+  font-size: 9px;
+  font-weight: 800;
+}
+
+.bc-red {
+  background: #8b2828;
+}
+
+.bc-green {
+  background: #1e703e;
+}
+
+.bc-blue {
+  background: #245c9d;
+}
+
+.bc-purple {
+  background: #70398b;
+}
+
+.bz-spacer {
+  width: 62px;
+  flex: 0 0 62px;
+}
+
+/* ================================================================
+   BET SLIP
+   ================================================================ */
+
+.slip-bar {
+  display: flex;
+
+  justify-content: space-between;
+  align-items: center;
+
+  gap: 10px;
+}
+
+.slip-total {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.btn-deal {
+  background: var(--gold);
+  color: #24190a;
+}
+
+.btn-clear {
+  background: #2b343e;
+  color: white;
+}
+
+/* ================================================================
+   SIDE PANEL
+   ================================================================ */
+
+aside .chip-section {
+  padding: 18px;
+}
+
+aside #chipBar {
+  grid-template-columns:
+    repeat(4,1fr);
+
+  gap: 12px;
+}
+
+aside .chip {
+  font-size: 13px;
+}
+
+.reset-btn {
+  width: 100%;
+
+  background: #421e24;
+  color: #ffb0b0;
+}
+
+.max-bet-note {
+  margin-top: 10px;
+
+  font-size: 11px;
+  color: var(--muted);
+}
+
+/* ================================================================
+   PAY TABLE
+   ================================================================ */
+
+.pay-tbl {
+  margin-top: 15px;
+
+  font-size: 11px;
+}
+
+.pay-row {
+  display: flex;
+
+  justify-content: space-between;
+
+  gap: 12px;
+
+  padding: 3px 0;
+
+  border-bottom:
+    1px solid #ffffff0d;
+}
+
+.pay-row span:first-child {
+  flex: 1;
+}
+
+.odds {
+  flex-shrink: 0;
+
+  color: var(--gold-bright);
+}
+
+.pay-note {
+  margin-top: 7px;
+
+  color: var(--muted);
+
+  line-height: 1.45;
+}
+
+/* ================================================================
+   HISTORY
+   ================================================================ */
+
+.history-title {
+  margin-top: 14px;
+
+  font-size: 10px;
+  color: var(--muted);
+}
+
+.hist-badges {
+  display: flex;
+
+  gap: 4px;
+
+  flex-wrap: wrap;
+
+  margin-top: 6px;
+}
+
+.h-b {
+  padding: 2px 6px;
+
+  border:
+    1px solid currentColor;
+
+  border-radius: 12px;
+
+  font-size: 10px;
+}
+
+/* ================================================================
+   RESPONSIVE
+   ================================================================ */
+
+@media (max-width: 900px) {
+  main {
+    display: block;
+    overflow: auto;
+  }
+
+  aside {
+    width: auto;
+  }
+
+  .seats-row,
+  .bz-seats {
+    flex-direction: column;
+  }
+
+  .felt {
+    height: auto;
+    max-height: none;
+  }
+
+  .seats-row {
+    height: auto;
+    max-height: none;
+  }
+
+  .seat {
+    height: auto;
+    max-height: none;
+  }
+
+  .bet-zone-wrap {
+    height: auto;
+    max-height: none;
+  }
+}
+</style>
+</head>
+
+<body>
+
+<!-- =============================================================
+     HEADER
+     ============================================================= -->
+
+<header>
+
+  <div>
+
+    <a
+      class="back-link"
+      href="{{ url_for('portal') }}"
+    >
+      ← Portal
+    </a>
+
+    <span class="game-title">
+      {{ game_icon }} {{ game_name }}
+    </span>
+
+  </div>
+
+  <div class="bal-box">
+
+    <div class="lbl">
+      Credits
+    </div>
+
+    <div
+      class="val"
+      id="balDisplay"
+    >
+      0
+    </div>
+
+  </div>
+
+</header>
+
+<!-- =============================================================
+     TABLE
+     ============================================================= -->
+
+<main>
+
+  <div class="table-col">
+
+    <div
+      class="status-bar"
+      id="statusBar"
+    >
+      <strong>Place your bets</strong>
+      — select a chip, then tap a spot.
+    </div>
+
+    <!-- =========================================================
+         FELT
+         ========================================================= -->
+
+    <div class="felt">
+
+      <div class="dealer-zone">
+
+        <div class="dealer-label">
+          DEALER
+        </div>
+
+        <div
+          class="dealer-hand"
+          id="dealerHand"
+        ></div>
+
+        <div
+          class="dealer-badge"
+          id="dealerBadge"
+        ></div>
+
+      </div>
+
+      <div
+        class="seats-row"
+        id="seatsRow"
+      ></div>
+
+    </div>
+
+    <!-- =========================================================
+         BETTING
+         ========================================================= -->
+
+    <div
+      class="bet-zone-wrap"
+      id="betZoneWrap"
+    >
+
+      <div class="bet-zone-title">
+        BET PLACEMENT
+      </div>
+
+      <div
+        class="bz-seats"
+        id="bzSeats"
+      ></div>
+
+    </div>
+
+    <!-- =========================================================
+         BET SLIP
+         ========================================================= -->
+
+    <div class="slip-bar">
+
+      <div class="slip-total">
+
+        On the table:
+
+        <strong id="pendingTotal">
+          0
+        </strong>
+
+        credits
+
+      </div>
+
+      <div>
+
+        <button
+          class="btn btn-clear"
+          id="clearBtn"
+          type="button"
+          disabled
+        >
+          Clear
+        </button>
+
+        <button
+          class="btn btn-deal"
+          id="dealBtn"
+          type="button"
+          disabled
+        >
+          Deal
+        </button>
+
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- ===========================================================
+       RIGHT PANEL
+       =========================================================== -->
+
+  <aside>
+
+    <div class="chip-section">
+
+      <div class="lbl">
+        Chip value
+      </div>
+
+      <div id="chipBar"></div>
+
+    </div>
+
+    <button
+      class="sb-btn reset-btn"
+      id="resetBtn"
+      type="button"
+    >
+      ↺ Reset Credits
+    </button>
+
+    <div class="max-bet-note">
+      Max / deal:
+      {{ max_bet }} cr
+    </div>
+
+    <div
+      id="payTblArea"
+      class="pay-tbl"
+    ></div>
+
+    <div class="history-title">
+      HISTORY
+    </div>
+
+    <div
+      class="hist-badges"
+      id="histBadges"
+    ></div>
+
+  </aside>
+
+</main>
+
+<!-- =============================================================
+     BLACKJACK CONFIG
+     ============================================================= -->
+
+<script>
+window.BLACKJACK_GAME =
+  {{ game|tojson }};
+
+window.BLACKJACK_MAX =
+  {{ max_bet|tojson }};
+
+window.BLACKJACK_START =
+  {{ starting_credits|tojson }};
+</script>
+
+<!-- =============================================================
+     BLACKJACK CONTROLLER
+     ============================================================= -->
+
+<script
+  type="module"
+  src="{{ url_for('static', filename='js/blackjack_solo.js') }}?v={{ static_v }}"
+></script>
+
+</body>
+</html>

@@ -1,0 +1,58 @@
+name: ETG Sim CI
+
+on:
+  push:
+    branches:
+      - main
+
+  pull_request:
+    branches:
+      - main
+
+jobs:
+
+  tests:
+    name: Unit and Integration Tests
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
+
+      - name: Run test suite
+        env:
+          DB_PATH: /tmp/etg_sim_test.db
+          SECRET_KEY: github-actions-test-secret
+          CONTROL_PIN: "1234"
+          EVENT_CODE: TEST
+          STARTING_CREDITS: "100000"
+          BETTING_SECONDS: "35"
+          MAX_BET: "20000"
+        run: |
+          python -m unittest discover -s tests -v
+
+
+  docker:
+    name: Docker Build
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build Docker image
+        run: |
+          docker build -t etg-sim:test .

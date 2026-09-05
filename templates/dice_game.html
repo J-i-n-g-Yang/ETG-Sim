@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{{ game_name }} · ETG Sim</title>
+<style>
+:root{--bg:#04110c;--panel:#071a13;--felt:#064d2c;--felt2:#08703d;--gold:#d5a72c;--gold2:#f4dc83;--text:#f7f4e7;--muted:#a8b9aa;--red:#a52b27;--blue:#273b82;--purple:#65155e;--orange:#783f08}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 50% 0,#0b4329,#020b08 70%);color:var(--text);font-family:Georgia,"Times New Roman",serif}
+.shell{min-height:100vh;padding:14px}.top{display:grid;grid-template-columns:150px 1fr 590px;gap:16px;align-items:start}.portal,.reset{border:1px solid #a27d24;border-radius:10px;padding:13px;background:#06150f;color:#fff;text-decoration:none;font-weight:700}.game-title{font-size:34px;color:var(--gold2);font-weight:900;letter-spacing:.04em}.ready{font-size:12px;border:1px solid #967821;border-radius:999px;padding:7px 14px;margin-left:12px}.balance{text-align:center;color:var(--gold2);font-size:14px}.balance strong{display:block;font-size:28px}.chipbar{display:flex;gap:8px;justify-content:flex-end;margin-top:8px}.chip{width:58px;height:58px;border-radius:50%;border:3px dashed #eee;color:#fff;font-weight:900;cursor:pointer}.chip.active{outline:3px solid var(--gold)}
+.main{display:grid;grid-template-columns:150px minmax(800px,1fr);gap:12px;margin-top:12px}.side{display:flex;flex-direction:column;gap:10px}.panel{background:#06150fdd;border:1px solid #7d6520;border-radius:10px;padding:12px}.metric{padding:10px 0;border-bottom:1px solid #ffffff15}.metric:last-child{border:0}.metric small{display:block;color:#ddd}.metric strong{font-size:20px}.net{color:#65ef8a}.history{min-height:210px;font-family:system-ui,sans-serif;font-size:12px;color:#b7c4ba}
+.center{min-width:0}.dome{height:112px;display:flex;align-items:center;justify-content:center;margin-bottom:-18px;position:relative;z-index:2}.dome-inner{min-width:230px;min-height:100px;border-radius:120px 120px 35px 35px;border:5px solid #b58b2a;background:radial-gradient(circle at 50% 15%,#ffffff30,#0a1712aa 55%,#111);box-shadow:0 10px 25px #0008;display:flex;gap:12px;align-items:center;justify-content:center}.roll-die{font-size:45px;filter:drop-shadow(0 4px 3px #000)}
+.board-wrap{background:#043f25;border:3px solid #a98427;border-radius:22px;padding:10px;box-shadow:0 14px 30px #0008;overflow:auto}.board{min-width:1020px}.bet{position:relative;background:#06492b;border:1px solid #a78628;color:#fff;border-radius:6px;min-height:55px;padding:5px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;cursor:pointer}.bet:hover{background:#0a6539}.bet strong{font-size:15px}.bet small{font-size:10px;color:#eadc8a}.dice-icons{font-family:Arial,sans-serif;font-size:25px;letter-spacing:2px;line-height:1}.combo-label{font-size:11px;color:#f1df8d;margin-top:2px}
+.sic-top{display:grid;grid-template-columns:1.2fr 5fr 1.1fr 1.2fr;gap:4px}.sic-top .middle{display:grid;grid-template-rows:1fr 1fr;gap:4px}.sixgrid{display:grid;grid-template-columns:repeat(6,1fr);gap:4px}.totals{display:grid;grid-template-columns:repeat(14,1fr);gap:3px;margin-top:4px}.single-die{display:grid;grid-template-columns:repeat(6,1fr);gap:4px;margin-top:4px}.sic-lower{display:grid;grid-template-columns:1.15fr 1.3fr 1.7fr .72fr;gap:4px;margin-top:4px}.group{border:1px solid #9d7e26;border-radius:6px;padding:4px}.group-title{text-align:center;color:var(--gold2);font-size:12px;font-weight:900;margin:2px}.combo-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:3px}.triple-combo-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:3px}.double-single-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:3px}.fourgroup{display:grid;grid-template-columns:1fr;gap:3px}
+.gfd-top,.gfd-row{display:grid;gap:4px}.gfd-top{grid-template-columns:1fr 6fr 1fr}.gfd-row{grid-template-columns:repeat(6,1fr)}.gfd-totals{display:grid;grid-template-columns:repeat(19,1fr);gap:3px;margin-top:4px}.gfd-combos{display:grid;grid-template-columns:repeat(5,1fr);gap:3px}.gfd-five{display:grid;grid-template-columns:repeat(6,1fr);gap:3px}
+.craps{display:grid;grid-template-columns:1fr 260px;gap:6px}.craps-main{display:flex;flex-direction:column;gap:5px}.craps-numbers{display:grid;grid-template-columns:repeat(6,1fr);gap:4px}.craps-wide{min-height:70px}.craps-field{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}.craps-props{display:grid;grid-template-columns:repeat(2,1fr);gap:4px}
+.actionbar{display:grid;grid-template-columns:1fr 190px 310px;gap:8px;background:#07140f;padding:10px;border-radius:0 0 16px 16px;border:1px solid #755e1d}.actionbar button{padding:14px;border-radius:8px;border:1px solid #777;font-weight:900}.clear{background:#181b1b;color:#ddd}.roll{background:linear-gradient(#e4b53d,#a9750b);color:#fff;font-size:18px}
+.rules{margin-top:8px;border:1px solid #a37c20;border-radius:10px;padding:12px;background:#06351f}.rules h3{text-align:center;color:var(--gold2);margin:0 0 8px}.rules-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;font-family:system-ui,sans-serif;font-size:12px}
+.badge{position:absolute;right:3px;top:3px;background:#d4af37;color:#111;border-radius:99px;padding:2px 5px;font-size:9px;font-weight:900}
+@media(max-width:1100px){.top{grid-template-columns:120px 1fr}.top-right{grid-column:1/-1}.main{grid-template-columns:120px 1fr}.chipbar{justify-content:center}.rules-grid{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body><div class="shell">
+<div class="top">
+<a class="portal" href="{{ url_for('portal') }}">← PORTAL</a>
+<div><span class="game-title">🎲 {{ game_name|upper }}</span><span class="ready" id="phaseLabel">READY</span></div>
+<div class="top-right"><div class="balance">BALANCE<strong id="balanceDisplay">0</strong></div><div class="chipbar" id="chipBar"></div></div>
+</div>
+<div class="main">
+<aside class="side">
+<div class="panel">
+<div class="metric"><small>DICE</small><strong id="diceCount">—</strong></div>
+<div class="metric"><small>CURRENT ROLL</small><strong id="currentRoll">—</strong></div>
+{% if game == "craps" %}<div class="metric"><small>POINT</small><strong id="pointLabel">OFF</strong></div>{% endif %}
+<div class="metric"><small>TOTAL STAKE</small><strong id="stakeMetric">0</strong></div>
+<div class="metric"><small>TOTAL RETURN</small><strong id="returnMetric">0</strong></div>
+<div class="metric"><small>NET WIN</small><strong class="net" id="netMetric">0</strong></div>
+</div>
+<div class="panel history"><b>ROUND HISTORY</b><div id="history">No rounds yet</div></div>
+</aside>
+<section class="center">
+<div class="dome"><div class="dome-inner" id="diceResult"></div></div>
+<div class="board-wrap"><div class="board" id="bettingArea"></div></div>
+<div class="actionbar"><div>ON TABLE<br><strong id="pendingTotal">0</strong></div><button class="clear" id="clearBtn">✕ CLEAR BETS</button><button class="roll" id="rollBtn" disabled>🎲 ROLL</button></div>
+<div class="rules"><h3 id="rulesTitle">RULES</h3><div class="rules-grid" id="rulesBox"></div></div>
+</section>
+</div>
+<button
+  class="reset"
+  id="resetBtn"
+  style="position:fixed;right:14px;top:14px"
+>
+  ↻ RESET CREDITS
+</button>
+
+</div>
+
+<script>
+window.DICE_GAME = {{ game|tojson }};
+window.DICE_MAX = {{ max_bet|tojson }};
+window.DICE_START = {{ starting_credits|tojson }};
+</script>
+
+{% if game == "craps" %}
+<script src="{{ url_for('static', filename='js/craps_solo.js') }}?v={{ static_v }}"></script>
+{% else %}
+<script src="{{ url_for('static', filename='js/dice_solo.js') }}?v={{ static_v }}"></script>
+{% endif %}
+
+</body>
+</html>

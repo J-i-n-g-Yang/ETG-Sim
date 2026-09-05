@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ETG Sim — Projector</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=Inter:wght@400;500;600;700&display=swap');
+
+  :root {
+    --bg: #080c0a;
+    --felt-green: #0d3d1e;
+    --felt-mid: #0f4a24;
+    --felt-light: #136030;
+    --felt-highlight: #1a7a3c;
+    --felt-edge: #0a2d16;
+    --gold: #c9a84c;
+    --gold-bright: #f0d060;
+    --gold-soft: #ecdfa0;
+    --gold-dark: #7a5f1a;
+    --ivory: #f5f0e0;
+    --ivory-warm: #ede5cc;
+    --red: #cc2222;
+    --red-bright: #e63333;
+    --black: #1a1a1a;
+    --blue-player: #4a90d9;
+    --blue-player-bright: #6aabf0;
+    --red-banker: #d94a4a;
+    --red-banker-bright: #f06a6a;
+    --text: #eef2ea;
+    --muted: #7a9070;
+    --panel: rgba(5,20,10,0.85);
+    --panel-border: rgba(100,180,80,0.18);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    height: 100%;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', system-ui, sans-serif;
+    overflow-x: hidden;
+  }
+
+  /* ==================== FELT BACKGROUND ==================== */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 120% 80% at 50% 40%, var(--felt-mid) 0%, var(--felt-edge) 55%, var(--bg) 100%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* Felt texture using repeating SVG pattern */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='4'%3E%3Ccircle cx='1' cy='1' r='0.6' fill='rgba(255,255,255,0.025)'/%3E%3Ccircle cx='3' cy='3' r='0.6' fill='rgba(255,255,255,0.015)'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  header, main { position: relative; z-index: 1; }
+
+  /* ==================== HEADER ==================== */
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 44px;
+    border-bottom: 1px solid rgba(180,220,120,0.15);
+    background: rgba(5,18,8,0.7);
+    backdrop-filter: blur(8px);
+  }
+
+  .brand { display: flex; align-items: center; gap: 16px; }
+
+  .chip-logo {
+    width: 48px; height: 48px; border-radius: 50%;
+    background: conic-gradient(
+      var(--gold) 0deg 30deg,
+      var(--ivory) 30deg 60deg,
+      var(--gold) 60deg 90deg,
+      var(--ivory) 90deg 120deg,
+      var(--gold) 120deg 150deg,
+      var(--ivory) 150deg 180deg,
+      var(--gold) 180deg 210deg,
+      var(--ivory) 210deg 240deg,
+      var(--gold) 240deg 270deg,
+      var(--ivory) 270deg 300deg,
+      var(--gold) 300deg 330deg,
+      var(--ivory) 330deg 360deg
+    );
+    border: 3px solid var(--gold-dark);
+    box-shadow: 0 0 0 2px var(--gold), 0 4px 16px rgba(0,0,0,0.5);
+    display: flex; align-items: center; justify-content: center;
+    position: relative;
+  }
+
+  .chip-logo::after {
+    content: 'ETG';
+    position: absolute;
+    font-size: 10px; font-weight: 800; letter-spacing: 0.05em;
+    color: #2a1800;
+    background: var(--gold);
+    width: 28px; height: 28px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  #gameRoundLabel {
+    font-family: 'Playfair Display', serif;
+    font-size: 26px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    color: var(--gold-soft);
+    text-shadow: 0 1px 8px rgba(200,160,60,0.4);
+  }
+
+  #phaseLabel {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    font-weight: 600;
+    color: var(--gold-bright);
+    background: rgba(180,140,30,0.15);
+    border: 1px solid rgba(180,140,30,0.4);
+    padding: 7px 18px;
+    border-radius: 999px;
+  }
+
+  /* ==================== MAIN ==================== */
+  main {
+    max-width: 1500px;
+    margin: 0 auto;
+    padding: 40px 40px 80px;
+    text-align: center;
+  }
+
+  /* ==================== IDLE ==================== */
+  #idleSection { padding: 100px 0; }
+  .idle-emblem {
+    font-size: 72px;
+    margin-bottom: 20px;
+    filter: drop-shadow(0 4px 24px rgba(200,160,60,0.3));
+  }
+  .idle-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 36px;
+    font-weight: 700;
+    color: var(--gold-soft);
+    margin-bottom: 10px;
+  }
+  .idle-sub { font-size: 15px; color: var(--muted); letter-spacing: 0.04em; }
+
+  /* ==================== COUNTDOWN ==================== */
+  #bettingSection .countdown-wrap { margin-bottom: 32px; }
+  #bettingSection .label {
+    font-size: 13px; text-transform: uppercase; letter-spacing: 0.12em;
+    color: var(--muted); margin-bottom: 6px;
+  }
+  #countdown {
+    font-family: 'Playfair Display', serif;
+    font-size: 100px;
+    font-weight: 800;
+    color: var(--gold-bright);
+    line-height: 1;
+    text-shadow: 0 0 60px rgba(240,208,96,0.4), 0 0 120px rgba(240,208,96,0.15);
+  }
+
+  /* ==================== LOCKED ==================== */
+  #lockedSection { padding: 90px 0; }
+  #lockedSection .big {
+    font-family: 'Playfair Display', serif;
+    font-size: 32px; font-weight: 700; color: var(--gold-soft);
+  }
+  #lockedSection .sub { color: var(--muted); margin-top: 10px; font-size: 15px; }
+
+  /* ==================== DISTRIBUTION / CHIP STACKS ==================== */
+  #distribution {
+    margin-top: 16px;
+    max-width: 1140px;
+    margin-left: auto; margin-right: auto;
+  }
+
+  /* The distribution felt is a copy of each game's felt design, with chip
+     stacks overlaid on each bet zone instead of clickable buttons. */
+  .proj-dist-felt {
+    border: 3px solid var(--gold-dark);
+    border-radius: 16px;
+    padding: 10px;
+    box-shadow: inset 0 0 30px rgba(0,0,0,0.35);
+    overflow: hidden;
+    background: radial-gradient(ellipse 120% 90% at 50% 10%, var(--felt-light) 0%, var(--felt-mid) 55%, var(--felt-edge) 100%);
+  }
+
+  /* ── Baccarat distribution — mirrors player layout ── */
+  .proj-dist-bacc-main {
+    display: grid;
+    grid-template-columns: 1fr 0.55fr 1fr;
+    gap: 8px; margin-bottom: 6px;
+    min-height: 80px;
+  }
+  .proj-dist-bacc-dt {
+    margin-bottom: 6px;
+  }
+  .proj-dist-bacc-sides {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+  }
+  /* Dragon Tiger strip — centred like player view */
+  .proj-dzone-dt {
+    background: rgba(180,140,30,0.12);
+    border: 1px solid rgba(180,140,30,0.45);
+    border-radius: 8px;
+    padding: 8px 12px;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center; text-align: center;
+    font-size: 13px; font-weight: 800; color: var(--gold-soft);
+    letter-spacing: 0.04em;
+    position: relative;
+  }
+  /* Ensure all projector baccarat zones centre their text */
+  .proj-dzone.player, .proj-dzone.tie, .proj-dzone.banker,
+  .proj-dist-bacc-sides .proj-dzone.dark {
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center; text-align: center;
+  }
+
+  /* ── Sic Bo distribution — full RWS layout ── */
+  .proj-dist-sicbo-top {
+    display: grid;
+    grid-template-columns: 0.85fr 0.9fr 0.9fr 0.85fr 0.9fr 0.9fr 0.85fr;
+    gap: 5px; margin-bottom: 5px; min-height: 62px;
+  }
+  .proj-dist-sicbo-doubles, .proj-dist-sicbo-triples {
+    display: flex; flex-direction: column; gap: 3px;
+  }
+  .proj-dist-sicbo-totals {
+    display: grid;
+    grid-template-columns: repeat(14, 1fr);
+    gap: 4px; margin-bottom: 5px;
+  }
+  .proj-dist-sicbo-combos {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 4px; margin-bottom: 5px;
+  }
+  .proj-dist-sicbo-singles {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 4px; margin-bottom: 5px;
+  }
+  .proj-dist-sicbo-oddeven {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 5px;
+  }
+
+  /* Roulette distribution — same grid structure as the player board.
+   * Col1/Col2/Col3 live in the same grid (last two columns), sized like a
+   * single number cell and aligned with rows 1/3/5 — right next to the
+   * 34/35/36 number column, not spanning the dozens/even-money rows. */
+  .proj-dist-roul-grid {
+    display: grid;
+    grid-template-columns:
+      minmax(22px, 1.4fr) 4px
+      repeat(11, minmax(16px, 1fr) 4px)
+      minmax(16px, 1fr)
+      4px
+      minmax(20px, 1.3fr);
+    grid-template-rows:
+      minmax(28px,1fr) 4px minmax(28px,1fr) 4px minmax(28px,1fr)
+      4px 4px
+      minmax(22px,0.6fr)
+      minmax(22px,0.6fr);
+    gap: 2px;
+    flex: 1;
+    min-width: 0;
+  }
+
+  /* Bet zone cells on the distribution board */
+  .proj-dzone {
+    border-radius: 5px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: clamp(8px, 1.2vw, 12px); font-weight: 700; color: #fff;
+    position: relative;
+    overflow: visible;
+    padding: 4px 2px;
+    text-align: center;
+  }
+  .proj-dzone.red-n   { background: radial-gradient(circle at 35% 30%, #e84444, #9a1c1c); }
+  .proj-dzone.black-n { background: radial-gradient(circle at 35% 30%, #3a3a3a, #181818); border: 1px solid #555; }
+  .proj-dzone.green-n { background: radial-gradient(circle at 35% 30%, #2db85a, #0d6b1e); }
+  .proj-dzone.dark    { background: rgba(5,20,10,0.75); border: 1px solid rgba(100,180,80,0.22); color: var(--text); font-size: 11px; flex-direction: column; }
+  .proj-dzone.player  { background: rgba(74,144,217,0.18); border: 2px solid rgba(74,144,217,0.5); color: var(--blue-player-bright); font-size: 14px; font-weight: 800; flex-direction: column; }
+  .proj-dzone.banker  { background: rgba(217,74,74,0.18); border: 2px solid rgba(217,74,74,0.5); color: var(--red-banker-bright); font-size: 14px; font-weight: 800; flex-direction: column; }
+  .proj-dzone.tie     { background: rgba(45,184,90,0.18); border: 2px solid rgba(45,184,90,0.5); color: #6dff9b; font-size: 13px; flex-direction: column; }
+  .proj-dzone.red-spot  { background: rgba(217,74,74,0.18); border-color: rgba(217,74,74,0.5); color: #ffb4b4; }
+  .proj-dzone.black-spot{ background: rgba(18,18,22,0.7); border-color: rgba(255,255,255,0.18); color: #dde4ee; }
+  .proj-dzone.gold    { background: rgba(240,208,80,0.14); border: 2px solid rgba(240,208,80,0.5); color: var(--gold-bright); }
+  .proj-dzone.gold-sm { background: rgba(180,140,30,0.12); border: 1px solid rgba(180,140,30,0.4); color: var(--gold-soft); }
+  /* For subcell groups in sic bo */
+  .proj-dzone-col { display: flex; flex-direction: column; gap: 3px; }
+  .proj-dzone-sub {
+    flex: 1; border-radius: 5px; display: flex; align-items: center; justify-content: center;
+    font-size: 9px; font-weight: 700; color: var(--text); position: relative; overflow: visible;
+    background: rgba(5,20,10,0.75); border: 1px solid rgba(100,180,80,0.22); padding: 3px;
+    text-align: center;
+  }
+
+  /* Chip stack overlaid on each zone */
+  .proj-chip-stack {
+    position: absolute;
+    bottom: 3px; left: 50%;
+    transform: translateX(-50%);
+    display: flex; flex-direction: column-reverse; align-items: center;
+    pointer-events: none;
+    z-index: 5;
+  }
+  .proj-cstack-chip {
+    width: 20px; height: 20px;
+    border-radius: 50%;
+    margin-top: -11px;
+    border: 2px solid rgba(255,255,255,0.28);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.5);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 6px; font-weight: 900;
+    color: rgba(255,255,255,0.9);
+    flex-shrink: 0;
+  }
+  .proj-cstack-chip:first-child { margin-top: 0; }
+  .proj-cstack-total {
+    position: absolute;
+    bottom: calc(100% + 2px); left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0,0,0,0.82);
+    color: var(--gold-bright);
+    font-size: 9px; font-weight: 800;
+    padding: 1px 5px; border-radius: 4px;
+    white-space: nowrap;
+  }
+
+  .dist-total-bar {
+    margin-top: 10px; font-size: 12px; color: var(--muted);
+    text-align: right; padding-right: 6px;
+  }
+  .muted { color: var(--muted); font-size: 14px; }
+
+  /* ==================== RESULT AREA ==================== */
+  </style>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/animations.css') }}?v={{ static_v }}">
+  <style>
+  /* ==================== HISTORY ==================== */
+  #historyDisplay { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-top: 16px; }
+  .hist-badge {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-width: 46px; height: 46px; padding: 0 12px; border-radius: 10px;
+    font-size: 18px; font-weight: 800;
+    background: rgba(0,0,0,0.4);
+    color: var(--text);
+    border: 1px solid rgba(100,180,80,0.15);
+  }
+  .hist-badge.blue  { background: rgba(74,144,217,0.25); color: var(--blue-player-bright); border-color: rgba(74,144,217,0.3); }
+  .hist-badge.red   { background: rgba(204,34,34,0.25); color: #ff9b9b; border-color: rgba(204,34,34,0.3); }
+  .hist-badge.black { background: rgba(20,20,30,0.6); color: #cfd6de; border-color: rgba(255,255,255,0.1); }
+  .hist-badge.green { background: rgba(26,122,60,0.3); color: #6dff9b; border-color: rgba(45,184,90,0.3); }
+
+  /* Sic bo history: real pip-faced dice instead of tiny unicode glyphs. */
+  .hist-badge.dice {
+    display: flex !important;
+    flex-direction: row;
+    align-items: center;
+    height: auto; min-width: 0; padding: 8px 10px; gap: 6px;
+    background: rgba(0,0,0,0.55);
+    border-color: rgba(255,255,255,0.1);
+  }
+  .hist-die {
+    width: 38px; height: 38px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, #fffdf5 0%, #ede8d0 100%);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(0,0,0,0.1), inset 0 2px 3px rgba(255,255,255,0.8);
+    display: grid !important;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(3, 1fr);
+    padding: 5px;
+    flex-shrink: 0;
+  }
+  .hist-die-dot {
+    width: 100%; height: 100%; max-width: 7px; max-height: 7px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, #444, #0e0e0e);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.35);
+    align-self: center; justify-self: center;
+  }
+
+  /* ==================== SECTION DIVIDER ==================== */
+  .section-block {
+    margin-top: 32px; padding-top: 20px;
+    border-top: 1px solid rgba(100,180,80,0.15);
+  }
+  .section-block h3 {
+    font-size: 11px; text-transform: uppercase; letter-spacing: 0.12em;
+    color: var(--muted); margin: 0 0 12px;
+  }
+
+  /* ==================== GAME OVER ==================== */
+  #gameOverSection { padding: 40px 0; }
+  #gameOverSection .big {
+    font-family: 'Playfair Display', serif;
+    font-size: 40px; font-weight: 700; color: var(--gold-soft); margin-bottom: 26px;
+  }
+  #leaderboard { max-width: 720px; margin: 0 auto; text-align: left; }
+  .lb-row {
+    display: flex; align-items: center; gap: 14px; padding: 11px 6px;
+    border-bottom: 1px solid rgba(100,180,80,0.1); font-size: 16px;
+  }
+  .lb-row:last-child { border-bottom: none; }
+  .lb-rank { width: 26px; color: var(--muted); font-weight: 700; }
+  .lb-name { flex: 1; }
+  .lb-credits { font-weight: 800; color: var(--gold-soft); }
+  .lb-row.gold .lb-rank   { color: var(--gold-bright); }
+  .lb-row.silver .lb-rank { color: #c7cdd4; }
+  .lb-row.bronze .lb-rank { color: #cd8a56; }
+</style>
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <div class="chip-logo"></div>
+      <div id="gameRoundLabel">—</div>
+    </div>
+    <div id="phaseLabel">IDLE</div>
+  </header>
+
+  <main>
+    <section id="idleSection">
+      <div class="idle-emblem">♠ ♥ ♦ ♣</div>
+      <div class="idle-title">Table Warming Up</div>
+      <div class="idle-sub">Waiting for the operator to open the next round…</div>
+    </section>
+
+    <section id="bettingSection" style="display:none;">
+      <div class="countdown-wrap">
+        <div class="label">Betting closes in</div>
+        <div id="countdown">—</div>
+      </div>
+      <div class="section-block">
+        <h3>Where the table is betting</h3>
+        <div id="distribution"></div>
+      </div>
+    </section>
+
+    <section id="lockedSection" style="display:none;">
+      <div class="big">Bets are locked</div>
+      <div class="sub">Revealing the result shortly…</div>
+    </section>
+
+    <section id="resultSection" style="display:none;">
+      <div id="animationArea"></div>
+      <div class="section-block">
+        <h3>Recent results</h3>
+        <div id="historyDisplay"></div>
+      </div>
+    </section>
+
+    <section id="gameOverSection" style="display:none;">
+      <div class="big">Final Leaderboard</div>
+      <div id="leaderboard"></div>
+    </section>
+  </main>
+
+  <script type="module" src="{{ url_for('static', filename='js/projector.js') }}?v={{ static_v }}"></script>
+</body>
+</html>

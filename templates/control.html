@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ETG Sim — Control</title>
+<style>
+  :root {
+    --bg: #0b0f14;
+    --panel: #12181f;
+    --panel-2: #1a222c;
+    --gold: #d4af37;
+    --gold-soft: #f4e5a3;
+    --green: #1a6b35;
+    --red: #b91c1c;
+    --text: #e9edf1;
+    --muted: #8a97a5;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    min-height: 100%;
+    background: radial-gradient(circle at 50% -10%, #1c2733 0%, var(--bg) 60%);
+    color: var(--text);
+    font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+  }
+  main {
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 20px 16px 60px;
+  }
+
+  /* On a tablet/desktop screen, lay panels out in columns instead of
+     stretching one narrow strip down the middle of the page. */
+  @media (min-width: 860px) {
+    main {
+      max-width: 1100px;
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      align-content: start;
+      column-gap: 20px;
+      padding: 28px 30px 60px;
+    }
+    h1 { grid-column: 1 / -1; }
+    .panel { margin-bottom: 0; }
+    /* Access, game type and round state stack in the left column; actions
+       (the panel used most during a live round) and live stats sit in the
+       right column, taller so Actions lines up with the left column. */
+    .panel:nth-of-type(1) { grid-column: 1; grid-row: 1; }
+    .panel:nth-of-type(2) { grid-column: 1; grid-row: 2; }
+    .panel:nth-of-type(3) { grid-column: 1; grid-row: 3; }
+    .panel:nth-of-type(4) { grid-column: 2; grid-row: 1 / span 2; }
+    .panel:nth-of-type(5) { grid-column: 2; grid-row: 3; }
+  }
+  h1 {
+    font-size: 18px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--gold-soft);
+    margin: 6px 0 18px;
+  }
+
+  .panel {
+    background: var(--panel);
+    border: 1px solid #212b36;
+    border-radius: 14px;
+    padding: 16px;
+    margin-bottom: 14px;
+  }
+
+  .pin-row {
+    display: flex;
+    gap: 8px;
+  }
+  .pin-row input {
+    flex: 1;
+    padding: 10px 12px;
+    background: var(--panel-2);
+    border: 1px solid #2a3542;
+    border-radius: 10px;
+    color: var(--text);
+    font-size: 15px;
+    letter-spacing: 0.15em;
+  }
+  .pin-row input:focus { outline: none; border-color: var(--gold); }
+
+  #stateDisplay { margin-bottom: 4px; }
+  .ctrl-state-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 6px 0;
+    border-bottom: 1px solid #1c242e;
+    font-size: 14px;
+  }
+  .ctrl-state-row:last-child { border-bottom: none; }
+  .ctrl-label { color: var(--muted); text-transform: uppercase; font-size: 11px; letter-spacing: 0.05em; align-self: center; }
+  .ctrl-val { font-weight: 700; }
+  .ctrl-val.phase-betting_open   { color: #6dff9b; }
+  .ctrl-val.phase-betting_locked { color: var(--gold-soft); }
+  .ctrl-val.phase-revealing,
+  .ctrl-val.phase-settled        { color: #6d9bff; }
+  .ctrl-val.phase-idle           { color: var(--muted); }
+
+  .countdown-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px dashed #2a3542;
+  }
+  .countdown-row .lbl { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
+  #ctrlCountdown { font-size: 22px; font-weight: 800; color: var(--gold-soft); }
+
+  .btn-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  button {
+    font-family: inherit;
+    cursor: pointer;
+    border: none;
+    border-radius: 10px;
+    padding: 14px 10px;
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    transition: transform 0.08s ease, opacity 0.15s;
+  }
+  button:active { transform: scale(0.97); }
+  button:disabled { opacity: 0.35; cursor: default; transform: none; }
+
+  .btn-primary { background: linear-gradient(180deg, var(--gold-soft), var(--gold)); color: #24190a; }
+  .btn-secondary { background: var(--panel-2); border: 1px solid #2a3542; color: var(--text); }
+  .btn-danger { background: rgba(185,28,28,0.18); border: 1px solid rgba(185,28,28,0.5); color: #ff9b9b; }
+  .btn-reset { background: rgba(185,28,28,0.28); border: 1px solid rgba(185,28,28,0.7); color: #ffdada; }
+
+  .extend-row {
+    display: flex;
+    gap: 8px;
+    grid-column: 1 / -1;
+  }
+  .extend-row input {
+    width: 70px;
+    padding: 12px 10px;
+    background: var(--panel-2);
+    border: 1px solid #2a3542;
+    border-radius: 10px;
+    color: var(--text);
+    font-size: 14px;
+    text-align: center;
+  }
+  .extend-row button { flex: 1; }
+
+  .full-row { grid-column: 1 / -1; }
+
+  .status {
+    min-height: 18px;
+    margin-top: 4px;
+    padding: 0 2px;
+    font-size: 13px;
+  }
+  .status.good { color: #9be8ac; }
+  .status.bad  { color: #ff9b9b; }
+
+  .stats { display: flex; flex-direction: column; gap: 6px; }
+  .ctrl-stat { font-size: 14px; color: var(--muted); }
+  .ctrl-stat b { color: var(--gold-soft); }
+
+  .panel h2 {
+    margin: 0 0 12px;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+  }
+
+  /* ---- Game toggle ---- */
+  .game-toggle {
+    display: flex;
+    gap: 0;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid #2a3542;
+    margin-bottom: 4px;
+  }
+  .game-toggle-btn {
+    flex: 1;
+    padding: 13px 6px;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    background: var(--panel-2);
+    border: none;
+    border-radius: 0;
+    color: var(--muted);
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+    position: relative;
+  }
+  .game-toggle-btn + .game-toggle-btn {
+    border-left: 1px solid #2a3542;
+  }
+  .game-toggle-btn:hover:not(.active):not(:disabled) {
+    background: #222d3a;
+    color: var(--text);
+  }
+  .game-toggle-btn.active {
+    color: #24190a;
+    cursor: default;
+  }
+  .game-toggle-btn.active.baccarat { background: linear-gradient(180deg, var(--gold-soft), var(--gold)); }
+  .game-toggle-btn.active.roulette { background: linear-gradient(180deg, #ff9b9b, #b91c1c); color: #fff; }
+  .game-toggle-btn.active.sicbo    { background: linear-gradient(180deg, #9be8ac, #1a6b35); color: #fff; }
+  .game-toggle-btn:disabled { opacity: 0.4; cursor: default; }
+  .game-toggle-note {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 6px;
+    min-height: 14px;
+  }
+</style>
+</head>
+<body>
+  <main>
+    <h1>Operator Control</h1>
+
+    <div class="panel">
+      <h2>Access</h2>
+      <div class="pin-row">
+        <input type="password" id="pinInput" inputmode="numeric" placeholder="Control PIN" autocomplete="off">
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>Game type</h2>
+      <div class="game-toggle">
+        <button class="game-toggle-btn baccarat" id="toggleBaccarat" data-game="baccarat">♠ Baccarat</button>
+        <button class="game-toggle-btn roulette" id="toggleRoulette" data-game="roulette">⚪ Roulette</button>
+        <button class="game-toggle-btn sicbo"    id="toggleSicbo"    data-game="sicbo">🎲 Sic Bo</button>
+      </div>
+      <div class="game-toggle-note" id="toggleNote">Select a game — takes effect on the next Open Betting.</div>
+    </div>
+
+    <div class="panel">
+      <h2>Round state</h2>
+      <div id="stateDisplay">
+        <div class="ctrl-state-row">
+          <span class="ctrl-label">Game</span>
+          <span class="ctrl-val">—</span>
+        </div>
+        <div class="ctrl-state-row">
+          <span class="ctrl-label">Round</span>
+          <span class="ctrl-val">— / 8</span>
+        </div>
+        <div class="ctrl-state-row">
+          <span class="ctrl-label">Phase</span>
+          <span class="ctrl-val">IDLE</span>
+        </div>
+      </div>
+      <div class="countdown-row">
+        <span class="lbl">Betting closes in</span>
+        <span id="ctrlCountdown">—</span>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>Actions</h2>
+      <div class="btn-grid">
+        <button id="btnOpen" class="btn-primary">Open Betting</button>
+        <button id="btnLock" class="btn-secondary">Lock</button>
+        <button id="btnReveal" class="btn-primary full-row">Reveal Result</button>
+
+        <div class="extend-row">
+          <input type="number" id="extendSecs" value="10" min="1" max="120">
+          <button id="btnExtend" class="btn-secondary">Extend Timer</button>
+        </div>
+
+        <button id="btnVoid" class="btn-danger full-row">Void Round &amp; Refund</button>
+        <button id="btnReset" class="btn-reset full-row">Reset Entire Event</button>
+      </div>
+      <div class="status" id="ctrlMsg"></div>
+    </div>
+
+    <div class="panel">
+      <h2>Live stats</h2>
+      <div class="stats" id="liveStats">
+        <div class="ctrl-stat"><b>—</b> players</div>
+        <div class="ctrl-stat"><b>—</b> bets — <b>—</b> credits wagered</div>
+        <div class="ctrl-stat"><b>—</b> SSE clients</div>
+      </div>
+    </div>
+  </main>
+
+  <script type="module" src="{{ url_for('static', filename='js/control.js') }}?v={{ static_v }}"></script>
+</body>
+</html>
