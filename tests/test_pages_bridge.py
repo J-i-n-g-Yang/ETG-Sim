@@ -699,6 +699,11 @@ class PagesBridgeContractTests(
         )
 
         self.assertIn(
+            '"bridge/poker.py"',
+            runtime,
+        )
+
+        self.assertIn(
             "import bridge.common",
             runtime,
         )
@@ -907,6 +912,73 @@ class PagesBridgeContractTests(
         )
 
 
+    # ------------------------------------------------------------
+    # POKER EXTRACTION CONTRACT
+    # ------------------------------------------------------------
+
+    def test_poker_operations_are_extracted(self):
+
+        source = (
+            RUNTIME
+            / "solo_bridge.py"
+        ).read_text(
+            encoding="utf-8"
+        )
+
+        poker = (
+            RUNTIME
+            / "bridge"
+            / "poker.py"
+        ).read_text(
+            encoding="utf-8"
+        )
+
+        self.assertIn(
+            "from bridge.poker import",
+            source,
+        )
+
+        self.assertNotIn(
+            "def poker_deal(",
+            source,
+        )
+
+        self.assertNotIn(
+            "def poker_action(",
+            source,
+        )
+
+        self.assertNotIn(
+            "def poker_settle(",
+            source,
+        )
+
+        self.assertNotIn(
+            "from game import poker_engine",
+            source,
+        )
+
+        self.assertIn(
+            "def poker_deal(",
+            poker,
+        )
+
+        self.assertIn(
+            "def poker_action(",
+            poker,
+        )
+
+        self.assertIn(
+            "def poker_settle(",
+            poker,
+        )
+
+        self.assertIn(
+            "from game import poker_engine",
+            poker,
+        )
+
+
 # ================================================================
 # MAIN
 # ================================================================
@@ -914,4 +986,3 @@ class PagesBridgeContractTests(
 if __name__ == "__main__":
 
     unittest.main()
-    

@@ -443,6 +443,7 @@ const BRIDGE_FILES = [
   "bridge/craps.py",
   "bridge/roulette.py",
   "bridge/royal_three_pictures.py",
+  "bridge/poker.py",
 ];
 
 
