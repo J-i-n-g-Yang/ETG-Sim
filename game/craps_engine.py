@@ -5,13 +5,36 @@ POINTS=craps.POINTS
 
 def D(v): return Decimal(str(v))
 def new_state():
-    return {'point':None,'bets':{},'come':{str(n):0.0 for n in POINTS},'dont_come':{str(n):0.0 for n in POINTS},'come_odds':{str(n):0.0 for n in POINTS},'dont_come_odds':{str(n):0.0 for n in POINTS},'working':{}}
+    return {
+        'point':None,
+        'bets':{},
+        'come':{str(n):0.0 for n in POINTS},
+        'dont_come':{str(n):0.0 for n in POINTS},
+        'come_odds':{str(n):0.0 for n in POINTS},
+        'dont_come_odds':{str(n):0.0 for n in POINTS},
+        'working':{},
+        'dont_pass_replacement_locked':False,
+        'dont_come_replacement_locked':False,
+    }
 def load(raw):
     s=new_state(); raw=raw or {}; s['point']=raw.get('point')
     s['bets']={k:D(v) for k,v in (raw.get('bets') or {}).items()}
     for b in ('come','dont_come','come_odds','dont_come_odds'):
         s[b]={str(n):D((raw.get(b) or {}).get(str(n),0)) for n in POINTS}
-    s['working']=dict(raw.get('working') or {}); return s
+    s['working']=dict(raw.get('working') or {})
+    s['dont_pass_replacement_locked']=bool(
+        raw.get(
+            'dont_pass_replacement_locked',
+            False,
+        )
+    )
+    s['dont_come_replacement_locked']=bool(
+        raw.get(
+            'dont_come_replacement_locked',
+            False,
+        )
+    )
+    return s
 def plain(v):
     if isinstance(v,Decimal): return float(v)
     if isinstance(v,dict): return {k:plain(x) for k,x in v.items()}
@@ -21,6 +44,30 @@ def validate_wager(wt): return wt in craps.WAGER_TYPES
 
 def can_place(wt,s):
     p=s['point']
+
+    if (
+        wt=='dont_pass'
+        and s.get(
+            'dont_pass_replacement_locked',
+            False,
+        )
+    ):
+        raise ValueError(
+            "Don't Pass cannot be replaced or increased "
+            "after removal or reduction"
+        )
+
+    if (
+        wt=='dont_come'
+        and s.get(
+            'dont_come_replacement_locked',
+            False,
+        )
+    ):
+        raise ValueError(
+            "Don't Come cannot be replaced or increased "
+            "after removal or reduction"
+        )
     if wt=='pass_line' and p is not None and s['bets'].get('pass_line',0)<=0: raise ValueError('Pass Line may only be established before a Come Out Roll')
     if wt=='dont_pass' and p is not None and s['bets'].get('dont_pass',0)<=0: raise ValueError("Don't Pass may only be established before a Come Out Roll")
     if wt in ('come','dont_come') and p is None: raise ValueError("Come and Don't Come require an established Point")
@@ -60,15 +107,45 @@ def action(raw,wt,act):
     if act in ('on','off'):
         s['working'][wt]=(act=='on'); return {'state':plain(s),'refund':0.0}
     if act!='take_down': raise ValueError('Unknown Craps action')
-    if wt=='pass_line': raise ValueError('Pass Line is a contract wager and cannot be removed')
-    refund=Decimal('0')
+
+    if wt=='pass_line':
+        raise ValueError('Pass Line is a contract wager and cannot be removed')
+
     if wt.startswith('come_point_'):
-        n=wt.rsplit('_',1)[1]; refund=s['come'][n]+s['come_odds'][n]; s['come'][n]=s['come_odds'][n]=Decimal('0')
+        raise ValueError('Come is a contract wager and cannot be removed')
+
+    refund=Decimal('0')
+
+    if wt.startswith('come_odds_'):
+        n=wt.rsplit('_',1)[1]
+        refund=s['come_odds'][n]
+        s['come_odds'][n]=Decimal('0')
+
+    elif wt.startswith('dont_come_odds_'):
+        n=wt.rsplit('_',1)[1]
+        refund=s['dont_come_odds'][n]
+        s['dont_come_odds'][n]=Decimal('0')
+
     elif wt.startswith('dont_come_point_'):
-        n=wt.rsplit('_',1)[1]; refund=s['dont_come'][n]+s['dont_come_odds'][n]; s['dont_come'][n]=s['dont_come_odds'][n]=Decimal('0')
+        n=wt.rsplit('_',1)[1]
+        refund=s['dont_come'][n]+s['dont_come_odds'][n]
+        s['dont_come'][n]=Decimal('0')
+        s['dont_come_odds'][n]=Decimal('0')
+        s['dont_come_replacement_locked']=True
+
     else:
-        a=s['bets'].pop(wt,Decimal('0')); refund=a+(craps.buy_vig(a) if wt.startswith('buy_') else Decimal('0'))
-    s['working'].pop(wt,None); return {'state':plain(s),'refund':float(refund)}
+        a=s['bets'].pop(wt,Decimal('0'))
+
+        if (
+            wt=='dont_pass'
+            and a>0
+        ):
+            s['dont_pass_replacement_locked']=True
+
+        refund=a+(craps.buy_vig(a) if wt.startswith('buy_') else Decimal('0'))
+
+    s['working'].pop(wt,None)
+    return {'state':plain(s),'refund':float(refund)}
 
 def result(rows,wt,a,ret,status,note=None):
     r={'wager_type':wt,'amount':float(a),'return':float(ret),'status':status,'win':status=='win','push':status=='push','active':status=='active'}
@@ -155,7 +232,24 @@ def settle_persistent(s,o,rows):
         elif wt.startswith('lay_'):decided=total in (n,7);won=total==7;odds=craps.LAY_PAY[n]
         else:decided=total==7 or total==n;won=total==n and hard;odds=craps.HARD_PAY[n]
         if not decided:result(rows,wt,a,0,'active');continue
-        ret=craps.to_one(a,odds) if won else Decimal('0');tr+=ret;result(rows,wt,a,ret,'win' if won else 'lose');s['bets'].pop(wt,None);s['working'].pop(wt,None)
+        if won and (
+            wt.startswith('place_')
+            or wt.startswith('buy_')
+            or wt.startswith('lay_')
+        ):
+            # Place / Buy / Lay remain on the table after a win.
+            # Only the profit is returned because the original stake
+            # remains committed in state.
+            ret = a * odds
+            tr += ret
+            result(rows, wt, a, ret, 'win')
+            continue
+
+        ret = craps.to_one(a, odds) if won else Decimal('0')
+        tr += ret
+        result(rows, wt, a, ret, 'win' if won else 'lose')
+        s['bets'].pop(wt, None)
+        s['working'].pop(wt, None)
     return tr
 
 def settle_one_roll(s,o,rows):
@@ -171,5 +265,17 @@ def roll(bets,raw_state=None,forced_dice=None):
     rows=[];tr=Decimal('0')
     tr+=settle_come_points(s,o,rows);tr+=settle_lines(s,o,rows);tr+=settle_new_come(s,o,rows);tr+=settle_persistent(s,o,rows);tr+=settle_one_roll(s,o,rows)
     s['point']=o['point_out']
+
+    # Don't Pass / Don't Come removal restrictions apply only
+    # to the current point cycle.  Once an established point
+    # ends, the next roll begins a fresh Come Out cycle and
+    # those replacement locks no longer apply.
+    if (
+        point_before is not None
+        and o['point_out'] is None
+    ):
+        s['dont_pass_replacement_locked']=False
+        s['dont_come_replacement_locked']=False
+
     active=sum(s['bets'].values(),Decimal('0'))+sum((sum(s[b].values(),Decimal('0')) for b in ('come','dont_come','come_odds','dont_come_odds')),Decimal('0'))
     return {'game':'craps','outcome':o,'results':rows,'total_wager':float(outlay),'new_wager':float(outlay),'vigorish':float(vig),'total_return':float(tr),'net':float(tr-outlay),'active_stake':float(active),'state':plain(s)}

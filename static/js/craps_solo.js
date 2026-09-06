@@ -2270,9 +2270,12 @@ function crapsActiveRow(
   working = undefined
 ) {
 
-  const isPass =
+  const isContract =
     wager ===
-    "pass_line";
+    "pass_line" ||
+    wager.startsWith(
+      "come_point_"
+    );
 
 
   const canToggle =
@@ -2365,7 +2368,7 @@ function crapsActiveRow(
 
 
         ${
-          !isPass
+          !isContract
             ? `
               <button
                 type="button"
