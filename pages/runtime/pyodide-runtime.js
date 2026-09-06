@@ -425,12 +425,104 @@ if "/etg" not in sys.path:
 
 
 /* ================================================================
+   BRIDGE FILE MANIFEST
+
+   solo_bridge.py remains the public browser entry point.
+
+   Shared bridge modules are installed first so solo_bridge.py can
+   import them normally from /etg/bridge.
+
+   Add game-family bridge modules here only after each extraction
+   has independently passed the bridge contract tests.
+   ================================================================ */
+
+const BRIDGE_FILES = [
+  "bridge/__init__.py",
+  "bridge/common.py",
+];
+
+
+/* ================================================================
    INSTALL BRIDGE
    ================================================================ */
 
 async function installBridge(
   pyodide
 ) {
+
+  /*
+   * Ensure the bridge package exists inside Pyodide.
+   */
+
+  ensureDir(
+    pyodide.FS,
+    "/etg/bridge"
+  );
+
+
+  /*
+   * Install modular bridge files first.
+   *
+   * These URLs resolve relative to:
+   *
+   *   /runtime/pyodide-runtime.js
+   *
+   * therefore:
+   *
+   *   bridge/common.py
+   *
+   * resolves to:
+   *
+   *   /runtime/bridge/common.py
+   */
+
+  for (
+    const relativePath
+    of BRIDGE_FILES
+  ) {
+
+    const sourceURL =
+      new URL(
+        relativePath,
+        import.meta.url
+      );
+
+
+    const source =
+      await fetchText(
+        sourceURL
+      );
+
+
+    const destination =
+      `/etg/${relativePath}`;
+
+
+    const slash =
+      destination.lastIndexOf(
+        "/"
+      );
+
+
+    ensureDir(
+      pyodide.FS,
+      destination.slice(
+        0,
+        slash
+      )
+    );
+
+
+    pyodide.FS.writeFile(
+      destination,
+      source
+    );
+  }
+
+
+  /*
+   * Install the public bridge entry point.
+   */
 
   const bridgeURL =
     new URL(
@@ -450,12 +542,18 @@ async function installBridge(
     bridgeSource
   );
 
+
+  /*
+   * Import only after both the package and entry point exist.
+   */
+
   await pyodide.runPythonAsync(`
 import sys
 
 if "/etg" not in sys.path:
     sys.path.insert(0, "/etg")
 
+import bridge.common
 import solo_bridge
   `);
 }

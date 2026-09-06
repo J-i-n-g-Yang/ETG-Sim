@@ -647,17 +647,14 @@ class PagesBridgeContractTests(
         )
 
 
-    def test_no_split_bridge_runtime_is_active_yet(self):
+    def test_common_bridge_runtime_is_installed(self):
 
         """
-        Baseline assertion.
+        The first modular bridge extraction installs only the shared
+        bridge package.
 
-        At pages-v1-working the deployed runtime is intentionally
-        monolithic. This prevents us from accidentally activating
-        half of the new modular bridge during the refactor.
-
-        We will intentionally change/remove this assertion only when
-        the modular bridge is ready to become authoritative.
+        solo_bridge.py remains the public Pyodide entry point while
+        bridge.common provides shared helpers.
         """
 
         runtime = (
@@ -667,8 +664,28 @@ class PagesBridgeContractTests(
             encoding="utf-8"
         )
 
-        self.assertNotIn(
+        self.assertIn(
             "BRIDGE_FILES",
+            runtime,
+        )
+
+        self.assertIn(
+            '"bridge/__init__.py"',
+            runtime,
+        )
+
+        self.assertIn(
+            '"bridge/common.py"',
+            runtime,
+        )
+
+        self.assertIn(
+            "import bridge.common",
+            runtime,
+        )
+
+        self.assertIn(
+            "import solo_bridge",
             runtime,
         )
 
