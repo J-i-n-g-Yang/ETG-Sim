@@ -709,6 +709,11 @@ class PagesBridgeContractTests(
         )
 
         self.assertIn(
+            '"bridge/dueling_8s.py"',
+            runtime,
+        )
+
+        self.assertIn(
             "import bridge.common",
             runtime,
         )
@@ -1038,6 +1043,174 @@ class PagesBridgeContractTests(
         self.assertIn(
             "from game import poker_engine",
             poker,
+        )
+
+
+    # ------------------------------------------------------------
+    # DUELING 8'S EXTRACTION CONTRACT
+    # ------------------------------------------------------------
+
+    def test_dueling_8s_operations_are_extracted(self):
+
+        source = (
+            RUNTIME
+            / "solo_bridge.py"
+        ).read_text(
+            encoding="utf-8"
+        )
+
+        dueling = (
+            RUNTIME
+            / "bridge"
+            / "dueling_8s.py"
+        ).read_text(
+            encoding="utf-8"
+        )
+
+        # Public operations must now be imported by the
+        # solo_bridge compatibility/dispatch layer.
+
+        self.assertIn(
+            "from bridge.dueling_8s import",
+            source,
+        )
+
+        # None of the Dueling 8's implementation should remain
+        # defined inside solo_bridge.py.
+
+        self.assertNotIn(
+            "def dueling_8s_deal(",
+            source,
+        )
+
+        self.assertNotIn(
+            "def dueling_8s_action(",
+            source,
+        )
+
+        self.assertNotIn(
+            "def dueling_8s_settle(",
+            source,
+        )
+
+        self.assertNotIn(
+            "def _d8_draw(",
+            source,
+        )
+
+        self.assertNotIn(
+            "def _d8_main_bet(",
+            source,
+        )
+
+        self.assertNotIn(
+            "def _d8_hand_status(",
+            source,
+        )
+
+        self.assertNotIn(
+            "def _d8_advance(",
+            source,
+        )
+
+        self.assertNotIn(
+            "def _d8_current(",
+            source,
+        )
+
+        self.assertNotIn(
+            "def _d8_visible(",
+            source,
+        )
+
+        self.assertNotIn(
+            "import game.dueling_8s_21 as dueling_8s",
+            source,
+        )
+
+        # The extracted module owns all three public operations.
+
+        self.assertIn(
+            "def dueling_8s_deal(",
+            dueling,
+        )
+
+        self.assertIn(
+            "def dueling_8s_action(",
+            dueling,
+        )
+
+        self.assertIn(
+            "def dueling_8s_settle(",
+            dueling,
+        )
+
+        # It also owns its private state-machine helpers.
+
+        self.assertIn(
+            "def _d8_draw(",
+            dueling,
+        )
+
+        self.assertIn(
+            "def _d8_main_bet(",
+            dueling,
+        )
+
+        self.assertIn(
+            "def _d8_hand_status(",
+            dueling,
+        )
+
+        self.assertIn(
+            "def _d8_advance(",
+            dueling,
+        )
+
+        self.assertIn(
+            "def _d8_current(",
+            dueling,
+        )
+
+        self.assertIn(
+            "def _d8_visible(",
+            dueling,
+        )
+
+        # The authoritative game implementation belongs directly
+        # to the extracted adapter.
+
+        self.assertIn(
+            "import game.dueling_8s_21 as dueling_8s",
+            dueling,
+        )
+
+        # Dueling 8's must use the extracted shared state-token
+        # codec rather than reaching back into solo_bridge.py.
+
+        self.assertIn(
+            "from bridge.state_token import",
+            dueling,
+        )
+
+        self.assertIn(
+            "encode_state(",
+            dueling,
+        )
+
+        self.assertIn(
+            "decode_state(",
+            dueling,
+        )
+
+        self.assertNotIn(
+            "_bj_enc(",
+            dueling,
+        )
+
+        self.assertNotIn(
+            "_bj_dec(",
+            dueling,
         )
 
 
