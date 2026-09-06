@@ -2184,7 +2184,11 @@ button{
             PLAYER
 
             <small>
-              PAYS 1 TO 1
+              {% if game == "baccarat_immortal" %}
+                1 TO 1 · PLAYER 7 PAYS 1 TO 2 · VS 8/9 PUSH
+              {% else %}
+                PAYS 1 TO 1
+              {% endif %}
             </small>
           </div>
 
