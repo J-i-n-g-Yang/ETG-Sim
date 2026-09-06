@@ -689,6 +689,11 @@ class PagesBridgeContractTests(
         )
 
         self.assertIn(
+            '"bridge/roulette.py"',
+            runtime,
+        )
+
+        self.assertIn(
             "import bridge.common",
             runtime,
         )
@@ -803,6 +808,53 @@ class PagesBridgeContractTests(
         )
 
 
+    # ------------------------------------------------------------
+    # ROULETTE EXTRACTION CONTRACT
+    # ------------------------------------------------------------
+
+    def test_roulette_operation_is_extracted(self):
+
+        source = (
+            RUNTIME
+            / "solo_bridge.py"
+        ).read_text(
+            encoding="utf-8"
+        )
+
+        roulette = (
+            RUNTIME
+            / "bridge"
+            / "roulette.py"
+        ).read_text(
+            encoding="utf-8"
+        )
+
+        self.assertIn(
+            "from bridge.roulette import",
+            source,
+        )
+
+        self.assertNotIn(
+            "def roulette_spin(",
+            source,
+        )
+
+        self.assertNotIn(
+            "import game.roulette_engine as roulette_engine",
+            source,
+        )
+
+        self.assertIn(
+            "def roulette_spin(",
+            roulette,
+        )
+
+        self.assertIn(
+            "import game.roulette_engine as roulette_engine",
+            roulette,
+        )
+
+
 # ================================================================
 # MAIN
 # ================================================================
@@ -810,4 +862,3 @@ class PagesBridgeContractTests(
 if __name__ == "__main__":
 
     unittest.main()
-    
