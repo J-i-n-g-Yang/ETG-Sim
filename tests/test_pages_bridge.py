@@ -650,8 +650,8 @@ class PagesBridgeContractTests(
     def test_modular_bridge_runtime_is_installed(self):
 
         """
-        Verify that extracted bridge modules are installed into Pyodide
-        before solo_bridge.py is imported.
+        Verify that every extracted bridge module is installed into
+        Pyodide before solo_bridge.py is imported.
 
         solo_bridge.py remains the public browser entry point.
         """
@@ -663,55 +663,38 @@ class PagesBridgeContractTests(
             encoding="utf-8"
         )
 
+        expected_bridge_files = {
+            "bridge/__init__.py",
+            "bridge/common.py",
+            "bridge/stateless.py",
+            "bridge/craps.py",
+            "bridge/roulette.py",
+            "bridge/royal_three_pictures.py",
+            "bridge/poker.py",
+            "bridge/state_token.py",
+            "bridge/dueling_8s.py",
+            "bridge/blackjack.py",
+        }
+
         self.assertIn(
             "BRIDGE_FILES",
             runtime,
         )
 
-        self.assertIn(
-            '"bridge/__init__.py"',
-            runtime,
-        )
+        for filename in expected_bridge_files:
 
-        self.assertIn(
-            '"bridge/common.py"',
-            runtime,
-        )
+            with self.subTest(
+                filename=filename
+            ):
 
-        self.assertIn(
-            '"bridge/stateless.py"',
-            runtime,
-        )
-
-        self.assertIn(
-            '"bridge/craps.py"',
-            runtime,
-        )
-
-        self.assertIn(
-            '"bridge/roulette.py"',
-            runtime,
-        )
-
-        self.assertIn(
-            '"bridge/royal_three_pictures.py"',
-            runtime,
-        )
-
-        self.assertIn(
-            '"bridge/poker.py"',
-            runtime,
-        )
-
-        self.assertIn(
-            '"bridge/state_token.py"',
-            runtime,
-        )
-
-        self.assertIn(
-            '"bridge/dueling_8s.py"',
-            runtime,
-        )
+                self.assertIn(
+                    f'"{filename}"',
+                    runtime,
+                    msg=(
+                        f"{filename} missing "
+                        "from BRIDGE_FILES"
+                    ),
+                )
 
         self.assertIn(
             "import bridge.common",
@@ -745,10 +728,20 @@ class PagesBridgeContractTests(
             encoding="utf-8"
         )
 
+        # The codec itself must live in its extracted module.
+
         self.assertIn(
-            "from bridge.state_token import",
-            source,
+            "def encode_state(",
+            state_token,
         )
+
+        self.assertIn(
+            "def decode_state(",
+            state_token,
+        )
+
+        # The thin public bridge should no longer own or alias
+        # Blackjack-specific state-token helpers.
 
         self.assertNotIn(
             "def _bj_enc(",
@@ -760,24 +753,24 @@ class PagesBridgeContractTests(
             source,
         )
 
-        self.assertIn(
+        self.assertNotIn(
             "_bj_enc = encode_state",
             source,
         )
 
-        self.assertIn(
+        self.assertNotIn(
             "_bj_dec = decode_state",
             source,
         )
 
-        self.assertIn(
-            "def encode_state(",
-            state_token,
+        self.assertNotIn(
+            "encode_state",
+            source,
         )
 
-        self.assertIn(
-            "def decode_state(",
-            state_token,
+        self.assertNotIn(
+            "decode_state",
+            source,
         )
 
 
@@ -1067,17 +1060,11 @@ class PagesBridgeContractTests(
             encoding="utf-8"
         )
 
-        # Public operations must now be imported by the
-        # solo_bridge compatibility/dispatch layer.
-
         self.assertIn(
             "from bridge.dueling_8s import",
             source,
         )
 
-        # None of the Dueling 8's implementation should remain
-        # defined inside solo_bridge.py.
-
         self.assertNotIn(
             "def dueling_8s_deal(",
             source,
@@ -1128,8 +1115,6 @@ class PagesBridgeContractTests(
             source,
         )
 
-        # The extracted module owns all three public operations.
-
         self.assertIn(
             "def dueling_8s_deal(",
             dueling,
@@ -1144,8 +1129,6 @@ class PagesBridgeContractTests(
             "def dueling_8s_settle(",
             dueling,
         )
-
-        # It also owns its private state-machine helpers.
 
         self.assertIn(
             "def _d8_draw(",
@@ -1177,16 +1160,10 @@ class PagesBridgeContractTests(
             dueling,
         )
 
-        # The authoritative game implementation belongs directly
-        # to the extracted adapter.
-
         self.assertIn(
             "import game.dueling_8s_21 as dueling_8s",
             dueling,
         )
-
-        # Dueling 8's must use the extracted shared state-token
-        # codec rather than reaching back into solo_bridge.py.
 
         self.assertIn(
             "from bridge.state_token import",
@@ -1212,6 +1189,250 @@ class PagesBridgeContractTests(
             "_bj_dec(",
             dueling,
         )
+
+
+    # ------------------------------------------------------------
+    # BLACKJACK EXTRACTION CONTRACT
+    # ------------------------------------------------------------
+
+    def test_blackjack_operations_are_extracted(self):
+
+        source = (
+            RUNTIME
+            / "solo_bridge.py"
+        ).read_text(
+            encoding="utf-8"
+        )
+
+        blackjack = (
+            RUNTIME
+            / "bridge"
+            / "blackjack.py"
+        ).read_text(
+            encoding="utf-8"
+        )
+
+        # Public operations must be imported by the thin
+        # compatibility/dispatch layer.
+
+        self.assertIn(
+            "from bridge.blackjack import",
+            source,
+        )
+
+        # Public Blackjack implementations must no longer live
+        # inside solo_bridge.py.
+
+        self.assertNotIn(
+            "def blackjack_deal(",
+            source,
+        )
+
+        self.assertNotIn(
+            "def blackjack_action(",
+            source,
+        )
+
+        self.assertNotIn(
+            "def blackjack_settle(",
+            source,
+        )
+
+        # Blackjack-specific helpers and constants must also have
+        # moved with the implementation.
+
+        blackjack_helpers = {
+            "def _pontoon_shoe(",
+            "def _pair_value(",
+            "def _main_bet(",
+            "def _pontoon_total(",
+            "def _bj_total(",
+            "def _bj_bust(",
+            "def _hand_status(",
+            "def _eligible_double(",
+            "def _eligible_split(",
+            "def _free_double(",
+            "def _free_split(",
+            "def _can_surrender(",
+            "def _advance(",
+            "def _current(",
+            "def _visible(",
+            "def _pontoon_combo(",
+            "def _main_result(",
+            "def _normal_hand_return(",
+        }
+
+        for helper in blackjack_helpers:
+
+            with self.subTest(
+                helper=helper
+            ):
+
+                self.assertNotIn(
+                    helper,
+                    source,
+                )
+
+                self.assertIn(
+                    helper,
+                    blackjack,
+                )
+
+        self.assertNotIn(
+            "BLACKJACK_GAMES =",
+            source,
+        )
+
+        self.assertIn(
+            "BLACKJACK_GAMES =",
+            blackjack,
+        )
+
+        # The extracted module owns all three public operations.
+
+        self.assertIn(
+            "def blackjack_deal(",
+            blackjack,
+        )
+
+        self.assertIn(
+            "def blackjack_action(",
+            blackjack,
+        )
+
+        self.assertIn(
+            "def blackjack_settle(",
+            blackjack,
+        )
+
+        # Game-specific implementation dependencies must no longer
+        # leak into the public dispatcher.
+
+        self.assertNotIn(
+            "import game.registry as registry",
+            source,
+        )
+
+        self.assertNotIn(
+            "from game.blackjack_base import",
+            source,
+        )
+
+        self.assertIn(
+            "import game.registry as registry",
+            blackjack,
+        )
+
+        self.assertIn(
+            "from game.blackjack_base import",
+            blackjack,
+        )
+
+        # Blackjack must use the extracted shared state-token
+        # codec rather than reaching back into solo_bridge.py.
+        #
+        # The extracted adapter deliberately keeps the historical
+        # _bj_enc / _bj_dec private names as local aliases so the
+        # implementation can be extracted without changing the
+        # established Blackjack state-machine behaviour.
+
+        self.assertIn(
+            "from bridge.state_token import",
+            blackjack,
+        )
+
+        self.assertIn(
+            "_bj_enc = encode_state",
+            blackjack,
+        )
+
+        self.assertIn(
+            "_bj_dec = decode_state",
+            blackjack,
+        )
+
+        self.assertIn(
+            "_bj_enc(",
+            blackjack,
+        )
+
+        self.assertIn(
+            "_bj_dec(",
+            blackjack,
+        )
+
+        # Those compatibility aliases belong to bridge.blackjack,
+        # not to the thin solo_bridge dispatch layer.
+
+        self.assertNotIn(
+            "_bj_enc = encode_state",
+            source,
+        )
+
+        self.assertNotIn(
+            "_bj_dec = decode_state",
+            source,
+        )
+
+        self.assertNotIn(
+            "from bridge.state_token import",
+            source,
+        )
+
+
+    # ------------------------------------------------------------
+    # THIN PUBLIC BRIDGE CONTRACT
+    # ------------------------------------------------------------
+
+    def test_solo_bridge_remains_thin_dispatch_layer(self):
+
+        source = (
+            RUNTIME
+            / "solo_bridge.py"
+        ).read_text(
+            encoding="utf-8"
+        )
+
+        # After all game-family extractions, the public bridge should
+        # contain only the dispatcher and JSON boundary functions.
+
+        self.assertIn(
+            "def dispatch(",
+            source,
+        )
+
+        self.assertIn(
+            "def dispatch_json(",
+            source,
+        )
+
+        forbidden_definitions = {
+            "def solo_spin(",
+            "def craps_roll(",
+            "def craps_action(",
+            "def roulette_spin(",
+            "def royal_three_pictures_deal(",
+            "def poker_deal(",
+            "def poker_action(",
+            "def poker_settle(",
+            "def blackjack_deal(",
+            "def blackjack_action(",
+            "def blackjack_settle(",
+            "def dueling_8s_deal(",
+            "def dueling_8s_action(",
+            "def dueling_8s_settle(",
+        }
+
+        for definition in forbidden_definitions:
+
+            with self.subTest(
+                definition=definition
+            ):
+
+                self.assertNotIn(
+                    definition,
+                    source,
+                )
 
 
 # ================================================================
