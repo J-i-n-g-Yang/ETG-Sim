@@ -1,561 +1,1118 @@
-<!doctype html>
-
+<!DOCTYPE html>
 <html lang="en">
-
 <head>
+  <meta charset="UTF-8">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1, maximum-scale=1"
+  >
+
+  <title>MBS Games Simulator — ETG Sim</title>
+
+  <style>
+    :root {
+      --bg: #0b0f14;
+      --panel: #12181f;
+      --panel-hover: #151d26;
+
+      --gold: #d4af37;
+      --gold-soft: #f4e5a3;
+
+      --felt: #0d3d1e;
+      --felt-light: #136030;
 
-<meta charset="utf-8">
+      --text: #e9edf1;
+      --muted: #8a97a5;
+
+      --border: #232d38;
+    }
 
-<meta
-  name="viewport"
-  content="width=device-width,initial-scale=1"
->
+    * {
+      box-sizing: border-box;
+    }
 
-<title>
-  ETG Sim · Solo Edition
-</title>
+    html,
+    body {
+      min-height: 100%;
+      margin: 0;
+    }
 
-<style>
+    html {
+      background: var(--bg);
+    }
 
-:root{
-  --bg:#04110c;
-  --panel:#071a13;
-  --gold:#d5a72c;
-  --gold2:#f4dc83;
-  --text:#f7f4e7;
-  --muted:#a8b9aa;
-  --good:#65ef8a;
-  --bad:#ff8c8c;
-}
+    body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
 
-*{
-  box-sizing:border-box;
-}
+      padding:
+        40px
+        20px
+        28px;
 
-html,
-body{
-  margin:0;
-  min-height:100%;
-}
+      background:
+        radial-gradient(
+          circle at 50% -10%,
+          #1c2733 0%,
+          var(--bg) 55%
+        );
 
-body{
-  min-height:100vh;
+      color: var(--text);
 
-  display:flex;
-  align-items:center;
-  justify-content:center;
+      font-family:
+        "Segoe UI",
+        system-ui,
+        -apple-system,
+        BlinkMacSystemFont,
+        sans-serif;
+    }
 
-  padding:24px;
 
-  background:
-    radial-gradient(
-      circle at 50% 0,
-      #0b4329,
-      #020b08 72%
-    );
+    /* ============================================================
+       BRAND
+       ============================================================ */
 
-  color:var(--text);
+    .brand {
+      text-align: center;
 
-  font-family:
-    Georgia,
-    "Times New Roman",
-    serif;
-}
+      margin-bottom: 24px;
+    }
 
-.panel{
-  width:min(760px,100%);
+    .brand .chip {
+      width: 64px;
+      height: 64px;
 
-  padding:32px;
+      margin:
+        0
+        auto
+        14px;
 
-  border:
-    2px solid
-    #a98427;
+      border-radius: 50%;
 
-  border-radius:24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
 
-  background:
-    #06150fee;
+      background:
+        radial-gradient(
+          circle at 35% 30%,
+          var(--gold-soft),
+          var(--gold) 60%,
+          #8b6914 100%
+        );
 
-  box-shadow:
-    0 18px 50px #0009;
+      border:
+        2px solid
+        #f4e5a366;
 
-  text-align:center;
-}
+      box-shadow:
+        0 8px 25px #0008,
+        inset 0 1px 2px #fff8;
 
-h1{
-  margin:
-    0 0 8px;
+      color: #2a1e00;
 
-  color:
-    var(--gold2);
+      font-size: 20px;
+      font-weight: 800;
 
-  font-size:
-    clamp(
-      30px,
-      6vw,
-      52px
-    );
-}
+      letter-spacing: .02em;
+    }
 
-.subtitle{
-  color:
-    var(--muted);
+    .brand h1 {
+      margin:
+        0
+        0
+        7px;
 
-  font-family:
-    Arial,
-    sans-serif;
+      color: var(--gold-soft);
 
-  font-size:14px;
-}
+      font-size: 26px;
+      font-weight: 800;
 
-.runtime-status{
-  margin:
-    28px auto 0;
+      letter-spacing: .07em;
 
-  padding:
-    13px 18px;
+      text-transform: uppercase;
+    }
 
-  border:
-    1px solid
-    #806720;
+    .brand p {
+      margin: 0;
 
-  border-radius:
-    999px;
+      color: var(--muted);
 
-  background:
-    #07140f;
+      font-size: 14px;
+    }
 
-  color:
-    #f6dc7b;
 
-  font-family:
-    Arial,
-    sans-serif;
+    /* ============================================================
+       RUNTIME STATUS
+       ============================================================ */
 
-  font-size:12px;
+    .runtime-wrap {
+      width: 100%;
+      max-width: 960px;
 
-  font-weight:900;
+      display: flex;
+      justify-content: center;
 
-  letter-spacing:.05em;
-}
+      margin-bottom: 30px;
+    }
 
-.runtime-status.ready{
-  border-color:
-    #287c49;
+    .runtime-status {
+      display: inline-flex;
+      align-items: center;
 
-  color:
-    var(--good);
-}
+      min-height: 34px;
 
-.runtime-status.error{
-  border-color:
-    #913d3d;
+      padding:
+        7px
+        14px;
 
-  color:
-    var(--bad);
+      border:
+        1px solid
+        #d4af3738;
 
-  border-radius:10px;
+      border-radius: 999px;
 
-  line-height:1.5;
-}
+      background:
+        #0a1510cc;
 
-.note{
-  margin-top:24px;
+      color: var(--muted);
 
-  color:#b8c5bb;
+      font-size: 12px;
+      font-weight: 600;
 
-  font-family:
-    Arial,
-    sans-serif;
+      letter-spacing: .02em;
 
-  font-size:12px;
+      box-shadow:
+        0 5px 16px #0004;
+    }
 
-  line-height:1.6;
-}
+    .runtime-status::before {
+      content: "";
 
-.game-link{
-  min-height:120px;
+      width: 7px;
+      height: 7px;
 
-  display:flex;
-  flex-direction:column;
+      margin-right: 8px;
 
-  align-items:center;
-  justify-content:center;
+      border-radius: 50%;
 
-  gap:5px;
+      background: #d4af37;
 
-  padding:16px 10px;
+      box-shadow:
+        0 0 8px #d4af3788;
+    }
 
-  border:1px solid #a98427;
 
-  border-radius:12px;
+    /* ============================================================
+       SECTIONS
+       ============================================================ */
 
-  background:
-    linear-gradient(
-      145deg,
-      #073d26,
-      #052a1b
-    );
+    .section-label {
+      width: 100%;
+      max-width: 960px;
 
-  color:#f4dc83;
+      margin:
+        8px
+        0
+        12px
+        4px;
 
-  text-decoration:none;
+      color: var(--muted);
 
-  transition:
-    transform .12s ease,
-    filter .12s ease,
-    box-shadow .12s ease;
-}
+      font-size: 12px;
 
-.game-link:hover{
-  transform:translateY(-2px);
+      letter-spacing: .08em;
 
-  filter:brightness(1.15);
+      text-transform: uppercase;
+    }
 
-  box-shadow:
-    0 8px 18px #0006,
-    0 0 12px #d5a72c33;
-}
+    .grid {
+      width: 100%;
+      max-width: 960px;
 
-.game-link span{
-  font-size:28px;
-}
+      display: grid;
 
-.game-link strong{
-  font-family:
-    Arial,
-    sans-serif;
+      grid-template-columns:
+        repeat(
+          auto-fit,
+          minmax(
+            210px,
+            1fr
+          )
+        );
 
-  font-size:12px;
+      gap: 14px;
 
-  font-weight:900;
+      margin-bottom: 28px;
+    }
 
-  line-height:1.25;
 
-  text-align:center;
-}
+    /* ============================================================
+       GAME CARDS
+       ============================================================ */
 
-.game-link small{
-  color:#a8b9aa;
+    .game-card {
+      position: relative;
 
-  font-family:
-    Arial,
-    sans-serif;
+      display: block;
 
-  font-size:10px;
-}
+      min-height: 184px;
 
-</style>
+      padding:
+        20px
+        18px;
 
+      overflow: hidden;
+
+      border:
+        1px solid
+        var(--border);
+
+      border-radius: 16px;
+
+      background:
+        var(--panel);
+
+      box-shadow:
+        0 12px 30px #0006;
+
+      color: var(--text);
+
+      text-decoration: none;
+
+      transition:
+        transform .12s ease,
+        border-color .12s ease,
+        background .12s ease,
+        box-shadow .12s ease;
+    }
+
+    a.game-card:hover {
+      transform:
+        translateY(-3px);
+
+      border-color:
+        #d4af3780;
+
+      background:
+        var(--panel-hover);
+
+      box-shadow:
+        0 16px 34px #0008;
+    }
+
+    a.game-card:focus-visible {
+      outline:
+        2px solid
+        var(--gold);
+
+      outline-offset:
+        3px;
+    }
+
+    .game-card .icon {
+      width: 44px;
+      height: 44px;
+
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      margin-bottom: 12px;
+
+      border:
+        1px solid
+        #d4af374d;
+
+      border-radius: 12px;
+
+      background:
+        linear-gradient(
+          160deg,
+          var(--felt-light),
+          var(--felt)
+        );
+
+      font-size: 22px;
+
+      box-shadow:
+        inset 0 1px 2px #ffffff10;
+    }
+
+    .game-card h3 {
+      margin:
+        0
+        0
+        6px;
+
+      font-size: 16px;
+      line-height: 1.25;
+    }
+
+    .game-card p {
+      margin: 0;
+
+      color: var(--muted);
+
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    .game-card .tag {
+      display: inline-block;
+
+      margin-top: 11px;
+
+      padding:
+        3px
+        10px;
+
+      border:
+        1px solid
+        #d4af3759;
+
+      border-radius: 999px;
+
+      color: var(--gold-soft);
+
+      font-size: 11px;
+
+      letter-spacing: .05em;
+
+      text-transform: uppercase;
+    }
+
+
+    /* ============================================================
+       FOOTER
+       ============================================================ */
+
+    .footer {
+      width: 100%;
+      max-width: 960px;
+
+      margin-top: 4px;
+
+      padding-top: 18px;
+
+      border-top:
+        1px solid
+        #ffffff0d;
+
+      text-align: center;
+    }
+
+    .footer-main {
+      color: var(--muted);
+
+      font-size: 11px;
+      line-height: 1.6;
+    }
+
+    .footer-sub {
+      margin-top: 5px;
+
+      color: #64707c;
+
+      font-size: 10px;
+    }
+
+
+    /* ============================================================
+       RESPONSIVE
+       ============================================================ */
+
+    @media (
+      max-width: 700px
+    ) {
+      body {
+        padding:
+          26px
+          14px
+          24px;
+      }
+
+      .brand {
+        margin-bottom: 20px;
+      }
+
+      .brand .chip {
+        width: 58px;
+        height: 58px;
+
+        font-size: 18px;
+      }
+
+      .brand h1 {
+        font-size: 21px;
+      }
+
+      .brand p {
+        font-size: 13px;
+      }
+
+      .runtime-wrap {
+        margin-bottom: 24px;
+      }
+
+      .grid {
+        grid-template-columns:
+          1fr;
+
+        gap: 11px;
+
+        margin-bottom: 24px;
+      }
+
+      .game-card {
+        min-height: 0;
+      }
+    }
+  </style>
 </head>
-
 
 <body>
 
-<main class="panel">
+  <!-- ==========================================================
+       BRAND
+       ========================================================== -->
 
-  <h1>
-    🎰 ETG SIM
-  </h1>
+  <header class="brand">
 
-  <div class="subtitle">
-    GitHub Pages · Solo Simulator Edition
+    <div class="chip">
+      ETG
+    </div>
+
+    <h1>
+      MBS Games Simulator
+    </h1>
+
+    <p>
+      Solo Simulator Edition · Pick a table and play
+    </p>
+
+  </header>
+
+
+  <!-- ==========================================================
+       PYODIDE RUNTIME STATUS
+
+       runtime/bootstrap.js owns this element.
+       ========================================================== -->
+
+  <div class="runtime-wrap">
+
+    <div
+      class="runtime-status"
+      id="runtimeStatus"
+    >
+      Loading browser game engine…
+    </div>
+
   </div>
 
-  <div
-    class="runtime-status loading"
-    id="runtimeStatus"
-  >
-    Starting browser casino engine…
+
+  <!-- ==========================================================
+       BLACKJACK
+       ========================================================== -->
+
+  <div class="section-label">
+    Blackjack — Solo (3 seats vs. Banker)
   </div>
 
-  <div class="note">
-    Your existing Python game engines are being loaded
-    directly inside this browser. No multiplayer server,
-    account or shared database is required.
+  <div class="grid">
+
+    <a
+      class="game-card"
+      href="./games/blackjack/lucky-8/"
+    >
+      <div class="icon">
+        🃏
+      </div>
+
+      <h3>
+        Blackjack Lucky 8
+      </h3>
+
+      <p>
+        MBS Version 5. Lucky 8 side bet — up to
+        1000:1. Pair 11:1.
+      </p>
+
+      <span class="tag">
+        Solo · 3 Seats · vs. Banker
+      </span>
+    </a>
+
+
+    <a
+      class="game-card"
+      href="./games/blackjack/free-bet/"
+    >
+      <div class="icon">
+        💸
+      </div>
+
+      <h3>
+        Free Bet Blackjack
+      </h3>
+
+      <p>
+        MBS Version 4. Free Splits &amp; Doubles.
+        Dealer 22 = Push.
+      </p>
+
+      <span class="tag">
+        Solo · 3 Seats · vs. Banker
+      </span>
+    </a>
+
+
+    <a
+      class="game-card"
+      href="./games/blackjack/kings-bounty/"
+    >
+      <div class="icon">
+        👑
+      </div>
+
+      <h3>
+        King's Bounty Blackjack
+      </h3>
+
+      <p>
+        Blackjack pays 6:5. King's Bounty,
+        Bet the Set &amp; Royal Match.
+      </p>
+
+      <span class="tag">
+        Solo · 3 Seats · vs. Banker
+      </span>
+    </a>
+
+
+    <a
+      class="game-card"
+      href="./games/blackjack/pontoon/"
+    >
+      <div class="icon">
+        ⚓
+      </div>
+
+      <h3>
+        Pontoon
+      </h3>
+
+      <p>
+        MBS Version 6. No 10s, special 21 payouts
+        and Super Bonus.
+      </p>
+
+      <span class="tag">
+        Solo · 3 Seats · vs. Banker
+      </span>
+    </a>
+
   </div>
 
-  <div
-  id="games"
-  style="
-    display:grid;
-    grid-template-columns:repeat(auto-fit,minmax(170px,1fr));
-    gap:12px;
-    margin-top:26px;
-  "
->
-
-  <!-- BACCARAT -->
-
-  <a class="game-link" href="./games/baccarat/dragon-tiger/">
-    <span>🐉</span>
-    <strong>DRAGON TIGER</strong>
-    <small>Baccarat</small>
-  </a>
-
-  <a class="game-link" href="./games/baccarat/immortal/">
-    <span>♾️</span>
-    <strong>IMMORTAL</strong>
-    <small>Baccarat</small>
-  </a>
-
-  <a class="game-link" href="./games/baccarat/rising/">
-    <span>🔥</span>
-    <strong>RISING DRAGON</strong>
-    <small>Baccarat</small>
-  </a>
-
-
-  <!-- DICE -->
-
-  <a class="game-link" href="./games/sicbo/">
-    <span>🎲</span>
-    <strong>SIC BO</strong>
-    <small>Dice</small>
-  </a>
-
-  <a class="game-link" href="./games/great-fortune-dice/">
-    <span>🎲</span>
-    <strong>GREAT FORTUNE DICE</strong>
-    <small>Dice</small>
-  </a>
-
-  <a
-  class="game-link"
-  href="./games/craps/"
->
-  <span>🎲</span>
-
-  <strong>
-    CRAPS
-  </strong>
-
-  <small>
-    Stateful Dice Table
-  </small>
-</a>
-
-
-  <!-- ROULETTE -->
-
-  <a class="game-link" href="./games/roulette/single-zero/">
-    <span>🎯</span>
-    <strong>SINGLE ZERO</strong>
-    <small>Roulette</small>
-  </a>
-
-  <a class="game-link" href="./games/roulette/double-zero/">
-    <span>🎯</span>
-    <strong>DOUBLE ZERO</strong>
-    <small>Roulette</small>
-  </a>
-
-  <a class="game-link" href="./games/roulette/sands/">
-    <span>🎯</span>
-    <strong>SANDS ROULETTE</strong>
-    <small>Roulette</small>
-  </a>
-
-
-  <!-- CARD -->
-
-  <a class="game-link" href="./games/royal-three-pictures/">
-    <span>👑</span>
-    <strong>ROYAL THREE PICTURES</strong>
-    <small>Card Game</small>
-  </a>
-
-  <a
-  class="game-link"
-  href="./games/blackjack/lucky-8/"
->
-  <span>🃏</span>
-
-  <strong>
-    BLACKJACK LUCKY 8
-  </strong>
-
-  <small>
-    Blackjack
-  </small>
-</a>
-
-
-<a
-  class="game-link"
-  href="./games/blackjack/free-bet/"
->
-  <span>💸</span>
-
-  <strong>
-    FREE BET BLACKJACK
-  </strong>
-
-  <small>
-    Blackjack
-  </small>
-</a>
-
-
-<a
-  class="game-link"
-  href="./games/blackjack/kings-bounty/"
->
-  <span>👑</span>
-
-  <strong>
-    KING'S BOUNTY
-  </strong>
-
-  <small>
-    Blackjack
-  </small>
-</a>
-
-
-<a
-  class="game-link"
-  href="./games/blackjack/pontoon/"
->
-  <span>⚓</span>
-
-  <strong>
-    PONTOON
-  </strong>
-
-  <small>
-    Blackjack
-  </small>
-</a>
-
-<!-- ============================================================
-     POKER
-     ============================================================ -->
-
-<a
-  class="game-link"
-  href="./games/poker/three-card-xtreme/"
->
-  <span>🃏</span>
-
-  <strong>
-    THREE CARD POKER XTREME
-  </strong>
-
-  <small>
-    Poker
-  </small>
-</a>
-
-
-<a
-  class="game-link"
-  href="./games/poker/singapore-stud/"
->
-  <span>🃏</span>
-
-  <strong>
-    SINGAPORE STUD
-  </strong>
-
-  <small>
-    Poker
-  </small>
-</a>
-
-
-<a
-  class="game-link"
-  href="./games/poker/texas-holdem-bonus/"
->
-  <span>♠️</span>
-
-  <strong>
-    TEXAS HOLD'EM BONUS
-  </strong>
-
-  <small>
-    Poker
-  </small>
-</a>
-
-
-<a
-  class="game-link"
-  href="./games/poker/ultimate-texas-holdem/"
->
-  <span>♠️</span>
-
-  <strong>
-    ULTIMATE TEXAS HOLD'EM
-  </strong>
-
-  <small>
-    Poker
-  </small>
-</a>
-
-
-<a
-  class="game-link"
-  href="./games/poker/mississippi-stud/"
->
-  <span>♦️</span>
-
-  <strong>
-    MISSISSIPPI STUD
-  </strong>
-
-  <small>
-    Poker
-  </small>
-</a>
-
-
-<a
-  class="game-link"
-  href="./games/poker/fortune-pai-gow/"
->
-  <span>🀄</span>
-
-  <strong>
-    FORTUNE PAI GOW POKER
-  </strong>
-
-  <small>
-    Poker
-  </small>
-</a>
-
-<!-- ============================================================
-     DUELING 8'S 21+
-     ============================================================ -->
-
-<a
-  class="game-link"
-  href="./games/dueling-8s/"
->
-  <span>8️⃣</span>
-
-  <strong>
-    DUELING 8'S 21+
-  </strong>
-
-  <small>
-    Card Game
-  </small>
-</a>
-
-</div>
-
-</main>
-
-
-<script
-  type="module"
-  src="./runtime/bootstrap.js"
-></script>
+
+  <!-- ==========================================================
+       BACCARAT
+       ========================================================== -->
+
+  <div class="section-label">
+    Baccarat — Solo
+  </div>
+
+  <div class="grid">
+
+    <a
+      class="game-card"
+      href="./games/baccarat/dragon-tiger/"
+    >
+      <div class="icon">
+        🐉
+      </div>
+
+      <h3>
+        Dragon Tiger No Commission
+      </h3>
+
+      <p>
+        MBS Version 4. Player, Banker, Tie,
+        Dragon Tiger and Big/Small Dragon/Tiger wagers.
+      </p>
+
+      <span class="tag">
+        Solo · vs. the RNG
+      </span>
+    </a>
+
+
+    <a
+      class="game-card"
+      href="./games/baccarat/immortal/"
+    >
+      <div class="icon">
+        ♾️
+      </div>
+
+      <h3>
+        Immortal Dragon Tiger
+      </h3>
+
+      <p>
+        MBS Version 3. Adds Player/Banker Pair and
+        Immortal Dragon, with special Player-7 settlement.
+      </p>
+
+      <span class="tag">
+        Solo · vs. the RNG
+      </span>
+    </a>
+
+
+    <a
+      class="game-card"
+      href="./games/baccarat/rising/"
+    >
+      <div class="icon">
+        🔥
+      </div>
+
+      <h3>
+        Rising Dragon Tiger
+      </h3>
+
+      <p>
+        MBS rules effective May 2026.
+        Adds Rising Dragon and Rising Tiger card-count wagers.
+      </p>
+
+      <span class="tag">
+        Solo · vs. the RNG
+      </span>
+    </a>
+
+  </div>
+
+
+  <!-- ==========================================================
+       POKER
+       ========================================================== -->
+
+  <div class="section-label">
+    Poker — Solo (up to 3 hands)
+  </div>
+
+  <div class="grid">
+
+    <a
+      class="game-card"
+      href="./games/poker/fortune-pai-gow/"
+    >
+      <div class="icon">
+        🀄
+      </div>
+
+      <h3>
+        Fortune Pai Gow Poker
+      </h3>
+
+      <p>
+        53-card Pai Gow Poker with Joker,
+        House Way and Fortune Bonus structure.
+      </p>
+
+      <span class="tag">
+        Solo · up to 3 hands
+      </span>
+    </a>
+
+
+    <a
+      class="game-card"
+      href="./games/poker/mississippi-stud/"
+    >
+      <div class="icon">
+        🌊
+      </div>
+
+      <h3>
+        Mississippi Stud Poker
+      </h3>
+
+      <p>
+        Two hole cards, three community streets
+        and 1×/2×/3× street decisions.
+      </p>
+
+      <span class="tag">
+        Solo · 1 viewed + 2 blind
+      </span>
+    </a>
+
+
+    <a
+      class="game-card"
+      href="./games/poker/singapore-stud/"
+    >
+      <div class="icon">
+        🦁
+      </div>
+
+      <h3>
+        Singapore Stud Poker
+      </h3>
+
+      <p>
+        Five-card stud against the Dealer.
+        Dealer qualifies with A-K high or better.
+      </p>
+
+      <span class="tag">
+        Solo · 1 viewed + 2 blind
+      </span>
+    </a>
+
+
+    <a
+      class="game-card"
+      href="./games/poker/texas-holdem-bonus/"
+    >
+      <div class="icon">
+        ⭐
+      </div>
+
+      <h3>
+        Texas Hold'em Bonus Progressive
+      </h3>
+
+      <p>
+        Flop, Turn and River wagering against the
+        Dealer using community cards.
+      </p>
+
+      <span class="tag">
+        Solo · 1 viewed + 2 blind
+      </span>
+    </a>
+
+
+    <a
+      class="game-card"
+      href="./games/poker/three-card-xtreme/"
+    >
+      <div class="icon">
+        3️⃣
+      </div>
+
+      <h3>
+        Three Card Poker Xtreme
+      </h3>
+
+      <p>
+        Three-card Ante/Play game with Dealer
+        qualification and bonus wagers.
+      </p>
+
+      <span class="tag">
+        Solo · 1 viewed + 2 blind
+      </span>
+    </a>
+
+
+    <a
+      class="game-card"
+      href="./games/poker/ultimate-texas-holdem/"
+    >
+      <div class="icon">
+        ♠️
+      </div>
+
+      <h3>
+        Ultimate Texas Hold'em
+      </h3>
+
+      <p>
+        Ante + Blind with 4×/3×/2×/1× Play
+        decisions against the Dealer.
+      </p>
+
+      <span class="tag">
+        Solo · 1 viewed + 2 blind
+      </span>
+    </a>
+
+  </div>
+
+
+  <!-- ==========================================================
+       DICE
+       ========================================================== -->
+
+  <div class="section-label">
+    Dice — Solo
+  </div>
+
+  <div class="grid">
+
+    <a
+      class="game-card"
+      href="./games/sicbo/"
+    >
+      <div class="icon">
+        🎲
+      </div>
+
+      <h3>
+        Sic Bo
+      </h3>
+
+      <p>
+        MBS Version 7. Three dice — Big/Small,
+        Odd/Even, totals, doubles, triples and combinations.
+      </p>
+
+      <span class="tag">
+        Dice · Solo · 3 Dice
+      </span>
+    </a>
+
+
+    <a
+      class="game-card"
+      href="./games/craps/"
+    >
+      <div class="icon">
+        🎰
+      </div>
+
+      <h3>
+        Craps
+      </h3>
+
+      <p>
+        MBS Version 4. Come Out rolls, Point state,
+        Pass/Don't Pass, Place, Hardways and propositions.
+      </p>
+
+      <span class="tag">
+        Dice · Solo · Stateful
+      </span>
+    </a>
+
+
+    <a
+      class="game-card"
+      href="./games/great-fortune-dice/"
+    >
+      <div class="icon">
+        🎲
+      </div>
+
+      <h3>
+        Great Fortune Dice
+      </h3>
+
+      <p>
+        MBS rules effective 14 July 2026.
+        Four dice with Big/Small, doubles, triples,
+        quadruples, 14 and combinations.
+      </p>
+
+      <span class="tag">
+        Dice · Solo · 4 Dice
+      </span>
+    </a>
+
+  </div>
+
+
+  <!-- ==========================================================
+       ROULETTE
+       ========================================================== -->
+
+  <div class="section-label">
+    Roulette — Solo
+  </div>
+
+  <div class="grid">
+
+    <a
+      class="game-card"
+      href="./games/roulette/single-zero/"
+    >
+      <div class="icon">
+        🎡
+      </div>
+
+      <h3>
+        Single Zero Roulette
+      </h3>
+
+      <p>
+        European-style single-zero Roulette.
+        Straight, Split, Street, Corner, Six Line,
+        Dozens, Columns and even-money wagers.
+      </p>
+
+      <span class="tag">
+        Roulette · Solo · Single 0
+      </span>
+    </a>
+
+
+    <a
+      class="game-card"
+      href="./games/roulette/double-zero/"
+    >
+      <div class="icon">
+        🎡
+      </div>
+
+      <h3>
+        Double Zero Roulette
+      </h3>
+
+      <p>
+        Roulette with both 0 and 00,
+        including the additional zero-area inside wagers.
+      </p>
+
+      <span class="tag">
+        Roulette · Solo · 0 + 00
+      </span>
+    </a>
+
+
+    <a
+      class="game-card"
+      href="./games/roulette/sands/"
+    >
+      <div class="icon">
+        ✨
+      </div>
+
+      <h3>
+        Sands Roulette
+      </h3>
+
+      <p>
+        MBS Sands Roulette with S, 00 and 0,
+        plus the special Green and Top Line wagers.
+      </p>
+
+      <span class="tag">
+        Roulette · Solo · S + 00 + 0
+      </span>
+    </a>
+
+  </div>
+
+
+  <!-- ==========================================================
+       SPECIALTY BLACKJACK
+       ========================================================== -->
+
+  <div class="section-label">
+    Specialty Blackjack — Solo
+  </div>
+
+  <div class="grid">
+
+    <a
+      class="game-card"
+      href="./games/dueling-8s/"
+    >
+      <div class="icon">
+        8️⃣
+      </div>
+
+      <h3>
+        Dueling 8's 21+
+      </h3>
+
+      <p>
+        Dueling 8's 21+ with a permanent 8♠ for both
+        Player and Dealer. Includes 6-7-8, Superb 8s,
+        Tie on 18 and 21+ side wagers.
+      </p>
+
+      <span class="tag">
+        Solo · Player vs. Dealer
+      </span>
+    </a>
+
+  </div>
+
+
+  <!-- ==========================================================
+       SPECIALTY CARD GAMES
+       ========================================================== -->
+
+  <div class="section-label">
+    Specialty Card Games — Solo
+  </div>
+
+  <div class="grid">
+
+    <a
+      class="game-card"
+      href="./games/royal-three-pictures/"
+    >
+      <div class="icon">
+        👑
+      </div>
+
+      <h3>
+        Royal Three Pictures
+      </h3>
+
+      <p>
+        Three-card Player hands against a shared Banker.
+        Includes Main, Tie and Royal Pictures wagers,
+        with special payouts for picture combinations.
+      </p>
+
+      <span class="tag">
+        Solo · 3 Hands · vs. Banker
+      </span>
+    </a>
+
+  </div>
+
+
+  <!-- ==========================================================
+       FOOTER
+       ========================================================== -->
+
+  <footer class="footer">
+
+    <div class="footer-main">
+      MBS Games Simulator · Browser-based ETG Solo Edition
+    </div>
+
+    <div class="footer-sub">
+      Game state and solo credits remain local to your browser.
+    </div>
+
+  </footer>
+
+
+  <!-- ==========================================================
+       ETG PAGES RUNTIME
+
+       KEEP THIS MODULE.
+       It initialises Pyodide and updates #runtimeStatus.
+       ========================================================== -->
+
+  <script
+    type="module"
+    src="./runtime/bootstrap.js"
+  ></script>
 
 </body>
-
 </html>
