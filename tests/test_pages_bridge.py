@@ -684,6 +684,11 @@ class PagesBridgeContractTests(
         )
 
         self.assertIn(
+            '"bridge/craps.py"',
+            runtime,
+        )
+
+        self.assertIn(
             "import bridge.common",
             runtime,
         )
@@ -741,6 +746,63 @@ class PagesBridgeContractTests(
         )
 
 
+    # ------------------------------------------------------------
+    # CRAPS EXTRACTION CONTRACT
+    # ------------------------------------------------------------
+
+    def test_craps_operations_are_extracted(self):
+
+        source = (
+            RUNTIME
+            / "solo_bridge.py"
+        ).read_text(
+            encoding="utf-8"
+        )
+
+        craps = (
+            RUNTIME
+            / "bridge"
+            / "craps.py"
+        ).read_text(
+            encoding="utf-8"
+        )
+
+        self.assertIn(
+            "from bridge.craps import",
+            source,
+        )
+
+        self.assertNotIn(
+            "def craps_roll(",
+            source,
+        )
+
+        self.assertNotIn(
+            "def craps_action(",
+            source,
+        )
+
+        self.assertNotIn(
+            "from game import craps_engine",
+            source,
+        )
+
+        self.assertIn(
+            "def craps_roll(",
+            craps,
+        )
+
+        self.assertIn(
+            "def craps_action(",
+            craps,
+        )
+
+        self.assertIn(
+            "from game import craps_engine",
+            craps,
+        )
+
+
 # ================================================================
 # MAIN
 # ================================================================
@@ -748,3 +810,4 @@ class PagesBridgeContractTests(
 if __name__ == "__main__":
 
     unittest.main()
+    
