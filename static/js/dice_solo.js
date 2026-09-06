@@ -1174,6 +1174,17 @@ function installDiceStyles() {
     }
 
 
+    .gfd-fourteen
+    .gfd-fourteen-title {
+
+      min-height: 0;
+
+      height: 40px;
+
+      padding: 3px;
+    }
+
+
     .gfd-fourteen-title span {
 
       font-size:
