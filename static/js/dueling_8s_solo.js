@@ -18,6 +18,11 @@
    - Up to 4 hands per seat after splitting
    - Only 8s may be split
    - Partial double supported
+
+   Presentation:
+   - Sequential initial card distribution
+   - Animated player action cards
+   - Sequential Dealer draw reveal
    ================================================================ */
 
 const GAME =
@@ -46,6 +51,29 @@ const fmt = (value) =>
       maximumFractionDigits: 2,
     }
   );
+
+const sleep = (ms) =>
+  new Promise(
+    (resolve) =>
+      setTimeout(
+        resolve,
+        ms
+      )
+  );
+
+
+/* ================================================================
+   ANIMATION TIMING
+   ================================================================ */
+
+const INITIAL_DEAL_DELAY =
+  360;
+
+const ACTION_DEAL_DELAY =
+  300;
+
+const DEALER_DEAL_DELAY =
+  390;
 
 
 /* ================================================================
@@ -93,21 +121,6 @@ const HISTORY_KEY =
 let selectedChip =
   1000;
 
-/*
- * Pending wagers:
- *
- * {
- *   "0": {
- *     main: 1000,
- *     superb_8s: 100
- *   },
- *
- *   "1": {
- *     main: 500
- *   }
- * }
- */
-
 let pendingBets = {
   "0": {},
   "1": {},
@@ -152,6 +165,65 @@ let roundState =
 
 let busy =
   false;
+
+
+/* ================================================================
+   DEBUG
+   ================================================================ */
+
+const D8_DEBUG =
+  false;
+
+
+function d8Log(
+  label,
+  data = undefined
+) {
+  if (!D8_DEBUG) {
+    return;
+  }
+
+  const time =
+    performance
+      .now()
+      .toFixed(1);
+
+  if (
+    data === undefined
+  ) {
+    console.log(
+      `[D8 ${time}ms] ${label}`
+    );
+
+    return;
+  }
+
+  console.log(
+    `[D8 ${time}ms] ${label}`,
+    data
+  );
+}
+
+
+d8Log(
+  "CONTROLLER LOADED",
+  {
+    src:
+      import.meta.url,
+
+    href:
+      window.location.href,
+
+    initialDealDelay:
+      INITIAL_DEAL_DELAY,
+
+    actionDealDelay:
+      ACTION_DEAL_DELAY,
+
+    dealerDealDelay:
+      DEALER_DEAL_DELAY,
+  }
+);
 
 
 /* ================================================================
@@ -273,6 +345,25 @@ function activePendingSeats() {
 
 
 /* ================================================================
+   BROWSER PAINT HELPER
+   ================================================================ */
+
+function nextPaint() {
+  return new Promise(
+    (resolve) => {
+      requestAnimationFrame(
+        () => {
+          requestAnimationFrame(
+            resolve
+          );
+        }
+      );
+    }
+  );
+}
+
+
+/* ================================================================
    CARDS
    ================================================================ */
 
@@ -293,7 +384,8 @@ function suitSymbol(
 
 
 function cardHTML(
-  card
+  card,
+  extraClass = ""
 ) {
   if (!card) {
     return "";
@@ -313,6 +405,7 @@ function cardHTML(
             ? "permanent"
             : ""
         }
+        ${extraClass}
       "
     >
       <div>
@@ -336,9 +429,82 @@ function renderCards(
     cards || []
   )
     .map(
-      cardHTML
+      (card) =>
+        cardHTML(
+          card
+        )
     )
     .join("");
+}
+
+
+/* ================================================================
+   DEAL ANIMATION CSS
+   ================================================================ */
+
+function installDealAnimationStyles() {
+  if (
+    document.getElementById(
+      "dueling8DealAnimationStyles"
+    )
+  ) {
+    return;
+  }
+
+  const style =
+    document.createElement(
+      "style"
+    );
+
+  style.id =
+    "dueling8DealAnimationStyles";
+
+  style.textContent = `
+    @keyframes dueling8DealIn {
+      0% {
+        opacity: 0;
+        transform:
+          translate3d(44px, -58px, 0)
+          rotate(9deg)
+          scale(.82);
+      }
+
+      68% {
+        opacity: 1;
+        transform:
+          translate3d(-3px, 4px, 0)
+          rotate(-1.5deg)
+          scale(1.025);
+      }
+
+      100% {
+        opacity: 1;
+        transform:
+          translate3d(0, 0, 0)
+          rotate(0deg)
+          scale(1);
+      }
+    }
+
+    .card.deal-in {
+      animation:
+        dueling8DealIn
+        320ms
+        cubic-bezier(.2,.8,.2,1)
+        both;
+
+      transform-origin:
+        50% 50%;
+
+      will-change:
+        transform,
+        opacity;
+    }
+  `;
+
+  document.head.appendChild(
+    style
+  );
 }
 
 
@@ -436,10 +602,6 @@ function placeBet(
 
   /*
    * Side wagers require a Main wager.
-   *
-   * This prevents an otherwise inactive seat
-   * from being sent to the backend with only
-   * side wagers.
    */
 
   if (
@@ -661,11 +823,6 @@ function refresh() {
       pending <= 0;
   }
 
-
-  /*
-   * Bet badges.
-   */
-
   document
     .querySelectorAll(
       "[data-seat][data-wager]"
@@ -722,7 +879,6 @@ function refresh() {
           fmt(amount);
       }
     );
-
 
   updateActions();
 }
@@ -784,11 +940,20 @@ function updateActions() {
     );
 
   const mapping = {
-    hitBtn: "hit",
-    standBtn: "stand",
-    doubleBtn: "double",
-    splitBtn: "split",
-    surrenderBtn: "surrender",
+    hitBtn:
+      "hit",
+
+    standBtn:
+      "stand",
+
+    doubleBtn:
+      "double",
+
+    splitBtn:
+      "split",
+
+    surrenderBtn:
+      "surrender",
   };
 
   Object
@@ -839,11 +1004,7 @@ function initialSeatHTML(
   seat
 ) {
   return `
-    <div
-      class="
-        hand
-      "
-    >
+    <div class="hand">
       <div
         style="
           opacity:.65;
@@ -870,10 +1031,6 @@ function initialSeatHTML(
    ================================================================ */
 
 function renderRound() {
-  /*
-   * Dealer.
-   */
-
   const dealerCards =
     $("dealerCards");
 
@@ -884,9 +1041,14 @@ function renderRound() {
     if (dealerCards) {
       dealerCards.innerHTML =
         cardHTML({
-          rank: "8",
-          suit: "S",
-          permanent: true,
+          rank:
+            "8",
+
+          suit:
+            "S",
+
+          permanent:
+            true,
         });
     }
 
@@ -926,10 +1088,7 @@ function renderRound() {
 
 
   /*
-   * Dealer during player decisions only exposes
-   * the permanent 8♠.
-   *
-   * Settlement returns the complete dealer hand.
+   * Dealer.
    */
 
   if (dealerCards) {
@@ -964,7 +1123,7 @@ function renderRound() {
 
 
   /*
-   * Seats.
+   * Player seats.
    */
 
   for (
@@ -1009,10 +1168,6 @@ function renderRound() {
       roundState.seats?.[
         String(seat)
       ];
-
-    /*
-     * Settlement uses hands_by_seat.
-     */
 
     const settledSeat =
       roundState.outcome
@@ -1101,7 +1256,6 @@ function renderRound() {
                   }
                 "
               >
-
                 <div>
                   <strong>
                     HAND ${
@@ -1110,7 +1264,6 @@ function renderRound() {
                   </strong>
 
                   ${split}
-
                   ${doubled}
                 </div>
 
@@ -1120,11 +1273,7 @@ function renderRound() {
                   )}
                 </div>
 
-                <div
-                  class="
-                    hand-total
-                  "
-                >
+                <div class="hand-total">
                   TOTAL ${total}
 
                   ${
@@ -1147,7 +1296,6 @@ function renderRound() {
                     hand.stake || 0
                   )}
                 </div>
-
               </div>
             `;
           }
@@ -1156,6 +1304,774 @@ function renderRound() {
   }
 
   refresh();
+}
+
+/* ================================================================
+   INITIAL DEAL ANIMATION
+
+   IMPORTANT:
+   During this function roundState remains null.
+
+   We directly control the card DOM so the complete backend state
+   cannot accidentally render all cards at once.
+
+   Distribution order:
+
+       Seat 1 permanent 8♠
+       Seat 2 permanent 8♠
+       Seat 3 permanent 8♠
+       Dealer permanent 8♠
+       Seat 1 random card
+       Seat 2 random card
+       Seat 3 random card
+
+   Only active seats participate.
+   ================================================================ */
+
+async function animateInitialDeal(
+  data
+) {
+  d8Log(
+    "INITIAL DEAL START",
+    data
+  );
+
+  const activeSeats =
+    Array.isArray(
+      data.active_seats
+    )
+      ? data.active_seats
+          .map(
+            Number
+          )
+          .filter(
+            Number.isInteger
+          )
+      : [];
+
+  d8Log(
+    "ACTIVE SEATS",
+    activeSeats
+  );
+
+
+  const dealerCards =
+    $("dealerCards");
+
+  const dealerTotal =
+    $("dealerTotal");
+
+
+  /*
+   * CRITICAL:
+   *
+   * Keep the authoritative backend state away from renderRound()
+   * until every initial card has physically been presented.
+   */
+
+  roundState =
+    null;
+
+
+  /* ============================================================
+     CLEAR TABLE
+     ============================================================ */
+
+  if (dealerCards) {
+    dealerCards.innerHTML =
+      "";
+  }
+
+  if (dealerTotal) {
+    dealerTotal.textContent =
+      "DEALING";
+  }
+
+
+  for (
+    let seat = 0;
+    seat < 3;
+    seat++
+  ) {
+    const seatElement =
+      $(
+        `seat${seat}`
+      );
+
+    const area =
+      $(
+        `seat${seat}Hands`
+      );
+
+    seatElement
+      ?.classList
+      .remove(
+        "active-seat"
+      );
+
+    if (!area) {
+      continue;
+    }
+
+
+    /*
+     * Inactive seat.
+     */
+
+    if (
+      !activeSeats.includes(
+        seat
+      )
+    ) {
+      area.innerHTML =
+        `
+          <div class="hand">
+            <div
+              style="
+                opacity:.5;
+                padding:14px 4px;
+              "
+            >
+              Not in round
+            </div>
+          </div>
+        `;
+
+      continue;
+    }
+
+
+    /*
+     * Active seat.
+     *
+     * Create a completely empty card container.
+     */
+
+    const hand =
+      data.seats?.[
+        String(seat)
+      ]?.hands?.[0];
+
+
+    area.innerHTML =
+      `
+        <div class="hand">
+
+          <div>
+            <strong>
+              HAND 1
+            </strong>
+          </div>
+
+          <div
+            class="cards"
+            id="seat${seat}DealCards"
+          ></div>
+
+          <div
+            class="hand-total"
+            id="seat${seat}DealTotal"
+          >
+            DEALING
+          </div>
+
+          <div
+            style="
+              font-size:12px;
+              margin-top:5px;
+            "
+            id="seat${seat}DealStake"
+          >
+            ${
+              hand
+                ? `STAKE ${fmt(
+                    hand.stake || 0
+                  )}`
+                : ""
+            }
+          </div>
+
+        </div>
+      `;
+  }
+
+
+  /*
+   * Make sure the EMPTY table reaches the screen before any card
+   * is inserted.
+   */
+
+  await nextPaint();
+
+  await sleep(
+    80
+  );
+
+  d8Log(
+    "EMPTY TABLE PAINTED"
+  );
+
+
+  /* ============================================================
+     PASS 1 — PLAYER PERMANENT 8♠
+     ============================================================ */
+
+  for (
+    const seat
+    of activeSeats
+  ) {
+    const hand =
+      data.seats?.[
+        String(seat)
+      ]?.hands?.[0];
+
+    const card =
+      hand?.cards?.[0];
+
+    const container =
+      $(
+        `seat${seat}DealCards`
+      );
+
+
+    if (
+      !card ||
+      !container
+    ) {
+      continue;
+    }
+
+
+    d8Log(
+      `PLAYER ${seat + 1} CARD 1`,
+      card
+    );
+
+
+    /*
+     * Insert exactly ONE card.
+     */
+
+    container.insertAdjacentHTML(
+      "beforeend",
+      cardHTML(
+        card,
+        "deal-in"
+      )
+    );
+
+
+    /*
+     * Force the inserted card to paint before sleeping.
+     */
+
+    await nextPaint();
+
+
+    /*
+     * Leave enough time for the player to visibly see this card
+     * arrive before the next card is inserted.
+     */
+
+    await sleep(
+      INITIAL_DEAL_DELAY
+    );
+  }
+
+
+  /* ============================================================
+     DEALER PERMANENT 8♠
+     ============================================================ */
+
+  const dealerPermanent =
+    data.dealer_cards?.[0] ||
+    data.dealer_up ||
+    {
+      rank:
+        "8",
+
+      suit:
+        "S",
+
+      permanent:
+        true,
+    };
+
+
+  d8Log(
+    "DEALER CARD 1",
+    dealerPermanent
+  );
+
+
+  if (dealerCards) {
+    dealerCards.insertAdjacentHTML(
+      "beforeend",
+      cardHTML(
+        dealerPermanent,
+        "deal-in"
+      )
+    );
+  }
+
+
+  if (dealerTotal) {
+    dealerTotal.textContent =
+      "Dealer showing 8";
+  }
+
+
+  await nextPaint();
+
+  await sleep(
+    INITIAL_DEAL_DELAY
+  );
+
+
+  /* ============================================================
+     PASS 2 — PLAYER RANDOM CARDS
+     ============================================================ */
+
+  for (
+    const seat
+    of activeSeats
+  ) {
+    const hand =
+      data.seats?.[
+        String(seat)
+      ]?.hands?.[0];
+
+    const card =
+      hand?.cards?.[1];
+
+    const container =
+      $(
+        `seat${seat}DealCards`
+      );
+
+
+    if (
+      !card ||
+      !container
+    ) {
+      continue;
+    }
+
+
+    d8Log(
+      `PLAYER ${seat + 1} CARD 2`,
+      card
+    );
+
+
+    /*
+     * Insert exactly ONE second card.
+     */
+
+    container.insertAdjacentHTML(
+      "beforeend",
+      cardHTML(
+        card,
+        "deal-in"
+      )
+    );
+
+
+    /*
+     * Do NOT renderRound() here.
+     *
+     * Doing so would reveal the entire authoritative hand.
+     */
+
+    await nextPaint();
+
+
+    /*
+     * Only now reveal the hand total.
+     */
+
+    const total =
+      $(
+        `seat${seat}DealTotal`
+      );
+
+    if (total) {
+      total.textContent =
+        `TOTAL ${Number(
+          hand.total ?? 0
+        )}${
+          hand.bust
+            ? " · BUST"
+            : ""
+        }`;
+    }
+
+
+    await sleep(
+      INITIAL_DEAL_DELAY
+    );
+  }
+
+
+  /*
+   * Hold the completed physical deal briefly.
+   */
+
+  await sleep(
+    180
+  );
+
+
+  /* ============================================================
+     HAND CONTROL BACK TO AUTHORITATIVE STATE
+     ============================================================ */
+
+  roundState =
+    data;
+
+  renderRound();
+
+
+  d8Log(
+    "INITIAL DEAL COMPLETE"
+  );
+}
+
+
+/* ================================================================
+   PLAYER ACTION TRANSITION
+
+   Hit / Double:
+       animate the newly received card.
+
+   Split:
+       animate the newly dealt card on each split hand.
+   ================================================================ */
+
+async function animateActionTransition(
+  before,
+  after
+) {
+  const seat =
+    Number(
+      before?.current_seat
+    );
+
+  const handIndex =
+    Number(
+      before?.current_hand
+    );
+
+
+  if (
+    !Number.isInteger(
+      seat
+    ) ||
+    !Number.isInteger(
+      handIndex
+    )
+  ) {
+    roundState =
+      after;
+
+    renderRound();
+
+    return;
+  }
+
+
+  const beforeHands =
+    before?.seats?.[
+      String(seat)
+    ]?.hands ||
+    [];
+
+  const afterHands =
+    after?.seats?.[
+      String(seat)
+    ]?.hands ||
+    [];
+
+
+  const beforeCount =
+    beforeHands[
+      handIndex
+    ]?.cards?.length ||
+    0;
+
+  const afterCount =
+    afterHands[
+      handIndex
+    ]?.cards?.length ||
+    0;
+
+
+  /*
+   * Install authoritative post-action state.
+   */
+
+  roundState =
+    after;
+
+  renderRound();
+
+  await nextPaint();
+
+
+  /* ============================================================
+     HIT / DOUBLE
+     ============================================================ */
+
+  if (
+    afterCount >
+    beforeCount
+  ) {
+    const handArea =
+      $(
+        `seat${seat}Hands`
+      );
+
+    const handElements =
+      handArea
+        ?.querySelectorAll(
+          ".hand"
+        );
+
+    const cards =
+      handElements?.[
+        handIndex
+      ]?.querySelectorAll(
+        ".card"
+      );
+
+    const newest =
+      cards?.[
+        cards.length - 1
+      ];
+
+
+    if (newest) {
+      /*
+       * Restart animation reliably even if this DOM element
+       * already inherited the class.
+       */
+
+      newest.classList.remove(
+        "deal-in"
+      );
+
+      void newest.offsetWidth;
+
+      newest.classList.add(
+        "deal-in"
+      );
+    }
+
+
+    await sleep(
+      ACTION_DEAL_DELAY
+    );
+
+    return;
+  }
+
+
+  /* ============================================================
+     SPLIT
+     ============================================================ */
+
+  if (
+    afterHands.length >
+    beforeHands.length
+  ) {
+    const handArea =
+      $(
+        `seat${seat}Hands`
+      );
+
+    const handElements =
+      handArea
+        ?.querySelectorAll(
+          ".hand"
+        );
+
+
+    /*
+     * The original hand was replaced by two hands.
+     *
+     * Animate the newly drawn second card of each resulting hand.
+     */
+
+    for (
+      let index =
+        handIndex;
+      index <=
+        handIndex + 1;
+      index++
+    ) {
+      const cards =
+        handElements?.[
+          index
+        ]?.querySelectorAll(
+          ".card"
+        );
+
+      const newest =
+        cards?.[
+          cards.length - 1
+        ];
+
+
+      if (!newest) {
+        continue;
+      }
+
+
+      newest.classList.remove(
+        "deal-in"
+      );
+
+      void newest.offsetWidth;
+
+      newest.classList.add(
+        "deal-in"
+      );
+
+
+      await sleep(
+        ACTION_DEAL_DELAY
+      );
+    }
+  }
+}
+
+
+/* ================================================================
+   DEALER ANIMATION
+
+   Settlement already contains the final Dealer hand.
+
+   Do NOT render the settlement immediately. Instead rebuild the
+   Dealer hand card-by-card, then install the final result.
+   ================================================================ */
+
+async function animateDealer(
+  cards
+) {
+  const area =
+    $("dealerCards");
+
+  const total =
+    $("dealerTotal");
+
+
+  if (!area) {
+    return;
+  }
+
+
+  const dealerCards =
+    Array.isArray(
+      cards
+    )
+      ? cards
+      : [];
+
+
+  /*
+   * Completely clear Dealer display first.
+   */
+
+  area.innerHTML =
+    "";
+
+
+  if (total) {
+    total.textContent =
+      "Dealer drawing...";
+  }
+
+
+  await nextPaint();
+
+
+  /* ============================================================
+     PERMANENT DEALER 8♠
+     ============================================================ */
+
+  const permanent =
+    dealerCards[0] ||
+    {
+      rank:
+        "8",
+
+      suit:
+        "S",
+
+      permanent:
+        true,
+    };
+
+
+  area.insertAdjacentHTML(
+    "beforeend",
+    cardHTML(
+      permanent,
+      "deal-in"
+    )
+  );
+
+
+  if (total) {
+    total.textContent =
+      "Dealer showing 8";
+  }
+
+
+  await nextPaint();
+
+  await sleep(
+    DEALER_DEAL_DELAY
+  );
+
+
+  /* ============================================================
+     REMAINING DEALER CARDS
+     ============================================================ */
+
+  for (
+    let index = 1;
+    index < dealerCards.length;
+    index++
+  ) {
+    area.insertAdjacentHTML(
+      "beforeend",
+      cardHTML(
+        dealerCards[
+          index
+        ],
+        "deal-in"
+      )
+    );
+
+
+    if (total) {
+      total.textContent =
+        "Dealer drawing...";
+    }
+
+
+    await nextPaint();
+
+    await sleep(
+      DEALER_DEAL_DELAY
+    );
+  }
+
+
+  await sleep(
+    160
+  );
 }
 
 
@@ -1186,16 +2102,20 @@ async function jsonPost(
       }
     );
 
+
   let data;
+
 
   try {
     data =
       await response.json();
+
   } catch {
     throw new Error(
       `Server returned HTTP ${response.status}`
     );
   }
+
 
   if (
     !response.ok
@@ -1205,6 +2125,7 @@ async function jsonPost(
       "Request failed"
     );
   }
+
 
   return data;
 }
@@ -1222,6 +2143,7 @@ async function deal() {
     return;
   }
 
+
   if (
     activePendingSeats()
       .length === 0
@@ -1233,24 +2155,47 @@ async function deal() {
     return;
   }
 
+
   const wagered =
     pendingTotal();
 
   const bets =
     buildBetArray();
 
+
+  d8Log(
+    "DEAL BUTTON EXECUTION",
+    {
+      bets,
+      wagered,
+    }
+  );
+
+
   busy =
     true;
 
-  $("phaseLabel")
-    .textContent =
+
+  const phaseLabel =
+    $("phaseLabel");
+
+  if (phaseLabel) {
+    phaseLabel.textContent =
       "DEALING";
+  }
+
 
   refresh();
 
   message("");
 
+
   try {
+    d8Log(
+      "SENDING DEAL REQUEST"
+    );
+
+
     const data =
       await jsonPost(
         "/api/solo/dueling-8s/deal",
@@ -1262,56 +2207,118 @@ async function deal() {
         }
       );
 
+
+    d8Log(
+      "DEAL RESPONSE RECEIVED",
+      {
+        active_seats:
+          data.active_seats,
+
+        current_seat:
+          data.current_seat,
+
+        current_hand:
+          data.current_hand,
+
+        all_done:
+          data.all_done,
+
+        dealer_cards:
+          data.dealer_cards,
+
+        seats:
+          data.seats,
+      }
+    );
+
+
+    /*
+     * Save only the opaque backend state token here.
+     *
+     * DO NOT:
+     *
+     *     roundState = data;
+     *
+     * before animateInitialDeal().
+     *
+     * Doing so would allow another renderer to expose the entire
+     * backend response before the sequential deal is finished.
+     */
+
     stateToken =
       data.state_token;
 
-    roundState =
-      data;
 
     resetPendingBets();
 
-    renderRound();
+
+    d8Log(
+      "CALLING INITIAL DEAL ANIMATION"
+    );
+
+
+    await animateInitialDeal(
+      data
+    );
+
+
+    d8Log(
+      "INITIAL DEAL ANIMATION RETURNED"
+    );
+
+
+    /*
+     * It is possible for the initial state to already have no
+     * decisions remaining.
+     */
 
     if (
       data.all_done
     ) {
       await settle();
-    } else {
-      $("phaseLabel")
-        .textContent =
-          `SEAT ${
-            Number(
-              data.current_seat
-            ) + 1
-          }`;
 
-      message(
-        `Seat ${
+      return;
+    }
+
+
+    if (phaseLabel) {
+      phaseLabel.textContent =
+        `SEAT ${
           Number(
             data.current_seat
           ) + 1
-        }, Hand ${
-          Number(
-            data.current_hand
-          ) + 1
-        }: choose an action.`
-      );
+        }`;
     }
+
+
+    message(
+      `Seat ${
+        Number(
+          data.current_seat
+        ) + 1
+      }, Hand ${
+        Number(
+          data.current_hand
+        ) + 1
+      }: choose an action.`
+    );
 
   } catch (error) {
     /*
-     * Deal failed before settlement.
+     * Deal failed.
      *
-     * Restore all locally deducted
-     * initial wagers.
+     * Pending wagers had already been deducted locally, therefore
+     * restore them.
      */
 
     balance +=
       wagered;
 
+
     resetPendingBets();
 
     saveBalance();
+
 
     stateToken =
       null;
@@ -1319,25 +2326,36 @@ async function deal() {
     roundState =
       null;
 
+
     message(
       error.message
     );
+
 
     console.error(
       error
     );
 
-    $("phaseLabel")
-      .textContent =
+
+    if (phaseLabel) {
+      phaseLabel.textContent =
         "BETTING";
+    }
+
+
+    renderRound();
 
   } finally {
     busy =
       false;
 
-    renderRound();
 
     refresh();
+
+
+    d8Log(
+      "DEAL FUNCTION FINISHED"
+    );
   }
 }
 
@@ -1358,6 +2376,7 @@ async function action(
     return;
   }
 
+
   const seat =
     Number(
       roundState.current_seat
@@ -1367,6 +2386,7 @@ async function action(
     Number(
       roundState.current_hand
     );
+
 
   if (
     !Number.isInteger(
@@ -1379,29 +2399,30 @@ async function action(
     return;
   }
 
+
+  const before =
+    roundState;
+
+
   busy =
     true;
 
-  $("phaseLabel")
-    .textContent =
+
+  const phaseLabel =
+    $("phaseLabel");
+
+  if (phaseLabel) {
+    phaseLabel.textContent =
       `SEAT ${seat + 1}`;
+  }
+
 
   refresh();
 
   message("");
 
-  try {
-    /*
-     * For paid Split, the additional wager
-     * equals the original Main stake.
-     *
-     * For Double, the user chooses the
-     * additional amount.
-     *
-     * The server tells us exactly how much
-     * was added via extra_stake.
-     */
 
+  try {
     const data =
       await jsonPost(
         "/api/solo/dueling-8s/action",
@@ -1421,38 +2442,34 @@ async function action(
         }
       );
 
+
     const extraStake =
       Number(
         data.extra_stake ||
         0
       );
 
+
     if (
       extraStake >
       balance
     ) {
-      /*
-       * This normally should have been
-       * prevented before sending the request.
-       *
-       * Retain this as a final UI guard.
-       */
-
       throw new Error(
         "Insufficient balance for additional stake."
       );
     }
 
+
     balance -=
       extraStake;
 
+
     saveBalance();
+
 
     stateToken =
       data.state_token;
 
-    roundState =
-      data;
 
     $("doubleBox")
       ?.classList
@@ -1460,7 +2477,16 @@ async function action(
         "active"
       );
 
-    renderRound();
+
+    /*
+     * Animate the state transition before allowing another action.
+     */
+
+    await animateActionTransition(
+      before,
+      data
+    );
+
 
     if (
       data.all_done
@@ -1470,13 +2496,16 @@ async function action(
       return;
     }
 
-    $("phaseLabel")
-      .textContent =
+
+    if (phaseLabel) {
+      phaseLabel.textContent =
         `SEAT ${
           Number(
             data.current_seat
           ) + 1
         }`;
+    }
+
 
     message(
       `Seat ${
@@ -1494,6 +2523,7 @@ async function action(
     message(
       error.message
     );
+
 
     console.error(
       error
@@ -1519,13 +2549,21 @@ async function settle() {
     return;
   }
 
-  $("phaseLabel")
-    .textContent =
+
+  const phaseLabel =
+    $("phaseLabel");
+
+
+  if (phaseLabel) {
+    phaseLabel.textContent =
       "DEALER";
+  }
+
 
   message(
     "Dealer drawing..."
   );
+
 
   const data =
     await jsonPost(
@@ -1536,16 +2574,43 @@ async function settle() {
       }
     );
 
+
+  /*
+   * IMPORTANT:
+   *
+   * The response already contains every Dealer card.
+   * Do not assign it to roundState yet.
+   *
+   * Keep the current player table visible while the Dealer cards
+   * are presented sequentially.
+   */
+
+  await animateDealer(
+    data.outcome
+      ?.dealer_cards ||
+    []
+  );
+
+
+  /*
+   * Settlement animation is complete.
+   *
+   * Apply monetary result.
+   */
+
   balance +=
     Number(
       data.total_return ||
       0
     );
 
+
   saveBalance();
+
 
   const returnMetric =
     $("returnMetric");
+
 
   if (returnMetric) {
     returnMetric.textContent =
@@ -1554,8 +2619,10 @@ async function settle() {
       );
   }
 
+
   const netMetric =
     $("netMetric");
+
 
   if (netMetric) {
     netMetric.textContent =
@@ -1570,9 +2637,9 @@ async function settle() {
       )}`;
   }
 
+
   /*
-   * Keep a settlement-shaped roundState
-   * for display.
+   * Only NOW expose the complete settlement.
    */
 
   roundState = {
@@ -1596,12 +2663,13 @@ async function settle() {
       data.outcome,
   };
 
+
   renderRound();
 
 
-  /* ------------------------------------------------------------
+  /* ============================================================
      HISTORY
-     ------------------------------------------------------------ */
+     ============================================================ */
 
   history.unshift({
     dealer:
@@ -1621,11 +2689,13 @@ async function settle() {
       ),
   });
 
+
   history =
     history.slice(
       0,
       12
     );
+
 
   saveHistory();
 
@@ -1633,15 +2703,18 @@ async function settle() {
 
 
   /*
-   * Unlock table for next round.
+   * Unlock table for the next round.
    */
 
   stateToken =
     null;
 
-  $("phaseLabel")
-    .textContent =
+
+  if (phaseLabel) {
+    phaseLabel.textContent =
       "BETTING";
+  }
+
 
   message(
     `Round complete · ${
@@ -1655,6 +2728,7 @@ async function settle() {
     )}`
   );
 
+
   refresh();
 }
 
@@ -1667,9 +2741,11 @@ function renderHistory() {
   const area =
     $("history");
 
+
   if (!area) {
     return;
   }
+
 
   if (
     !history.length
@@ -1679,6 +2755,7 @@ function renderHistory() {
 
     return;
   }
+
 
   area.innerHTML =
     history
@@ -1700,6 +2777,7 @@ function renderHistory() {
                 item.dealer ??
                 "—"
               }
+
               ${
                 item.seats
                   ? ` · ${item.seats} seat${
@@ -1746,12 +2824,15 @@ function openDoubleBox() {
     return;
   }
 
+
   const hand =
     currentHandState();
+
 
   if (!hand) {
     return;
   }
+
 
   const original =
     Number(
@@ -1760,10 +2841,6 @@ function openDoubleBox() {
       0
     );
 
-  /*
-   * Backend rules permit a partial Double
-   * from table minimum up to original wager.
-   */
 
   const maximum =
     Math.min(
@@ -1771,25 +2848,31 @@ function openDoubleBox() {
       balance
     );
 
+
   const input =
     $("doubleAmount");
+
 
   if (!input) {
     return;
   }
 
+
   input.min =
     "1";
+
 
   input.max =
     String(
       maximum
     );
 
+
   input.value =
     String(
       maximum
     );
+
 
   $("doubleBox")
     ?.classList
@@ -1803,21 +2886,26 @@ function confirmDouble() {
   const input =
     $("doubleAmount");
 
+
   if (!input) {
     return;
   }
+
 
   const amount =
     Number(
       input.value
     );
 
+
   const hand =
     currentHandState();
+
 
   if (!hand) {
     return;
   }
+
 
   const original =
     Number(
@@ -1825,6 +2913,7 @@ function confirmDouble() {
       hand.stake ||
       0
     );
+
 
   if (
     !Number.isFinite(
@@ -1839,6 +2928,7 @@ function confirmDouble() {
     return;
   }
 
+
   if (
     amount >
     original
@@ -1852,6 +2942,7 @@ function confirmDouble() {
     return;
   }
 
+
   if (
     amount >
     balance
@@ -1862,6 +2953,7 @@ function confirmDouble() {
 
     return;
   }
+
 
   action(
     "double",
@@ -1880,9 +2972,11 @@ function splitCurrentHand() {
   const hand =
     currentHandState();
 
+
   if (!hand) {
     return;
   }
+
 
   const required =
     Number(
@@ -1890,6 +2984,7 @@ function splitCurrentHand() {
       hand.stake ||
       0
     );
+
 
   if (
     balance <
@@ -1903,6 +2998,7 @@ function splitCurrentHand() {
 
     return;
   }
+
 
   action(
     "split"
@@ -1919,6 +3015,7 @@ function resetCredits() {
     return;
   }
 
+
   if (
     !confirm(
       `Reset credits to ${fmt(
@@ -1929,53 +3026,73 @@ function resetCredits() {
     return;
   }
 
+
   balance =
     STARTING_CREDITS;
 
+
   resetPendingBets();
+
 
   stateToken =
     null;
 
+
   roundState =
     null;
 
+
   history =
     [];
+
 
   localStorage.removeItem(
     BALANCE_KEY
   );
 
+
   localStorage.removeItem(
     HISTORY_KEY
   );
+
 
   saveBalance();
 
   saveHistory();
 
+
   const returnMetric =
     $("returnMetric");
+
 
   if (returnMetric) {
     returnMetric.textContent =
       "0";
   }
 
+
   const netMetric =
     $("netMetric");
+
 
   if (netMetric) {
     netMetric.textContent =
       "0";
   }
 
-  $("phaseLabel")
-    .textContent =
+
+  const phaseLabel =
+    $("phaseLabel");
+
+
+  if (phaseLabel) {
+    phaseLabel.textContent =
       "BETTING";
+  }
+
 
   message("");
+
 
   renderRound();
 
@@ -1990,65 +3107,125 @@ function resetCredits() {
    ================================================================ */
 
 function init() {
+  d8Log(
+    "INIT START"
+  );
+
+
+  installDealAnimationStyles();
+
+
   saveBalance();
+
 
   renderChips();
 
+
   bindBets();
 
+
   renderHistory();
+
 
   renderRound();
 
 
-  $("clearBtn")
-    .onclick =
+  const clearButton =
+    $("clearBtn");
+
+  if (clearButton) {
+    clearButton.onclick =
       clearBets;
+  }
 
-  $("dealBtn")
-    .onclick =
+
+  const dealButton =
+    $("dealBtn");
+
+  if (dealButton) {
+    dealButton.onclick =
       deal;
+  }
 
-  $("resetBtn")
-    .onclick =
+
+  const resetButton =
+    $("resetBtn");
+
+  if (resetButton) {
+    resetButton.onclick =
       resetCredits;
+  }
 
 
-  $("hitBtn")
-    .onclick =
+  const hitButton =
+    $("hitBtn");
+
+  if (hitButton) {
+    hitButton.onclick =
       () =>
         action(
           "hit"
         );
+  }
 
-  $("standBtn")
-    .onclick =
+
+  const standButton =
+    $("standBtn");
+
+  if (standButton) {
+    standButton.onclick =
       () =>
         action(
           "stand"
         );
+  }
 
-  $("splitBtn")
-    .onclick =
+
+  const splitButton =
+    $("splitBtn");
+
+  if (splitButton) {
+    splitButton.onclick =
       splitCurrentHand;
+  }
 
-  $("surrenderBtn")
-    .onclick =
+
+  const surrenderButton =
+    $("surrenderBtn");
+
+  if (surrenderButton) {
+    surrenderButton.onclick =
       () =>
         action(
           "surrender"
         );
+  }
 
-  $("doubleBtn")
-    .onclick =
+
+  const doubleButton =
+    $("doubleBtn");
+
+  if (doubleButton) {
+    doubleButton.onclick =
       openDoubleBox;
+  }
 
-  $("confirmDoubleBtn")
-    .onclick =
+
+  const confirmDoubleButton =
+    $("confirmDoubleBtn");
+
+  if (confirmDoubleButton) {
+    confirmDoubleButton.onclick =
       confirmDouble;
+  }
 
 
   refresh();
+
+
+  d8Log(
+    "INIT COMPLETE"
+  );
 }
 
 
@@ -2062,8 +3239,13 @@ if (
 ) {
   document.addEventListener(
     "DOMContentLoaded",
-    init
+    init,
+    {
+      once:
+        true,
+    }
   );
+
 } else {
   init();
 }
