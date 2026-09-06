@@ -2858,7 +2858,7 @@ def bj_deal():
     for b in bets:
         try: s=int(b["seat"]); wt=str(b["wager_type"]); amt=float(b["amount"])
         except Exception: return jsonify({"error":"Malformed bet"}),400
-        if s not in (0,1,2) or amt<=0 or amt>max_bet or not registry.validate_wager(game,wt): return jsonify({"error":"Invalid bet"}),400
+        if s not in (0,1,2) or not wt.startswith(f"seat{s}_") or amt<=0 or amt>max_bet or not registry.validate_wager(game,wt): return jsonify({"error":"Invalid bet"}),400
         total+=amt; active.add(s); bbs.setdefault(str(s),{})[wt]=amt
     if total>max_bet: return jsonify({"error":f"Total stake capped at {int(max_bet)} credits"}),400
     active=sorted(active); shoe=_pontoon_shoe() if game=="pontoon" else build_shoe(6)

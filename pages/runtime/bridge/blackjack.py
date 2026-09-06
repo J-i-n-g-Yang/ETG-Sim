@@ -1014,6 +1014,10 @@ def blackjack_deal(
                 2,
             )
             or
+            not wager_type.startswith(
+                f"seat{seat}_"
+            )
+            or
             amount != amount
             or
             amount <= 0

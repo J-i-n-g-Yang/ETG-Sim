@@ -1195,6 +1195,54 @@ class PagesBridgeContractTests(
     # BLACKJACK EXTRACTION CONTRACT
     # ------------------------------------------------------------
 
+    def test_blackjack_deal_rejects_wager_for_different_seat(self):
+        import sys
+
+        runtime = str(
+            ROOT / "pages" / "runtime"
+        )
+
+        added = False
+
+        if runtime not in sys.path:
+            sys.path.insert(
+                0,
+                runtime,
+            )
+            added = True
+
+        try:
+            from bridge.blackjack import blackjack_deal
+
+            for game in (
+                "blackjack_lucky8",
+                "blackjack_freebet",
+                "blackjack_kingsbounty",
+                "pontoon",
+            ):
+                with self.subTest(game=game):
+                    with self.assertRaisesRegex(
+                        ValueError,
+                        "Invalid bet",
+                    ):
+                        blackjack_deal(
+                            {
+                                "game": game,
+                                "bets": [
+                                    {
+                                        "seat": 1,
+                                        "wager_type": "seat0_main",
+                                        "amount": 100,
+                                    }
+                                ],
+                            }
+                        )
+        finally:
+            if added:
+                sys.path.remove(
+                    runtime
+                )
+
     def test_blackjack_operations_are_extracted(self):
 
         source = (

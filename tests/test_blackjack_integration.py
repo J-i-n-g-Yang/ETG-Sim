@@ -100,6 +100,38 @@ class TestBlackjackIntegration(unittest.TestCase):
         self.assertEqual(response.status_code, 400)
         self.assertIn("error", data)
 
+    def test_deal_rejects_wager_for_different_seat(self):
+        for game in (
+            "blackjack_lucky8",
+            "blackjack_freebet",
+            "blackjack_kingsbounty",
+            "pontoon",
+        ):
+            with self.subTest(game=game):
+                response = self.client.post(
+                    "/api/solo/blackjack/deal",
+                    json={
+                        "game": game,
+                        "bets": [
+                            {
+                                "seat": 1,
+                                "wager_type": "seat0_main",
+                                "amount": 100,
+                            }
+                        ],
+                    },
+                )
+
+                self.assertEqual(
+                    response.status_code,
+                    400,
+                )
+
+                self.assertEqual(
+                    response.get_json()["error"],
+                    "Invalid bet",
+                )
+
     def test_wrong_seat_cannot_act(self):
         st = self._state(
             game="blackjack_lucky8",
