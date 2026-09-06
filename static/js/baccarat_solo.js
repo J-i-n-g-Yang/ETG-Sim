@@ -1233,8 +1233,8 @@ function pointDifference(
 
    These follow the winning margin.
 
-   Dragon = Banker wins.
-   Tiger  = Player wins.
+   Dragon = Player wins.
+   Tiger  = Banker wins.
 
    Small = winning margin 4–6.
    Big   = winning margin 7–9.
@@ -1261,7 +1261,7 @@ function detectSmallDragon(
   return (
     getWinner(
       outcome
-    ) === "banker" &&
+    ) === "player" &&
     pointDifference(
       outcome
     ) >= 4 &&
@@ -1291,7 +1291,7 @@ function detectBigDragon(
   return (
     getWinner(
       outcome
-    ) === "banker" &&
+    ) === "player" &&
     pointDifference(
       outcome
     ) >= 7
@@ -1318,7 +1318,7 @@ function detectSmallTiger(
   return (
     getWinner(
       outcome
-    ) === "player" &&
+    ) === "banker" &&
     pointDifference(
       outcome
     ) >= 4 &&
@@ -1348,7 +1348,7 @@ function detectBigTiger(
   return (
     getWinner(
       outcome
-    ) === "player" &&
+    ) === "banker" &&
     pointDifference(
       outcome
     ) >= 7
@@ -1392,18 +1392,44 @@ function detectTigerTie(
 /* ================================================================
    DRAGON TIGER COMBINATION
 
-   Existing game rules use final card counts:
-   2-2
-   3-2
-   3-3
+   Dragon Tiger requires Player 7 defeating Banker 6.
 
-   This marker is recorded regardless of whether Dragon Tiger was
-   actually wagered.
+   Final card counts determine the payout category:
+   2-2       -> 30:1
+   3-2 / 2-3 -> 40:1
+   3-3       -> 100:1
+
+   The result marker is recorded regardless of whether Dragon Tiger
+   was actually wagered.
    ================================================================ */
 
 function detectDragonTigerCombo(
   outcome
 ) {
+
+  /*
+   * Dragon Tiger wins only when Player wins 7-6.
+   * Final card counts select the applicable payout:
+   *   2-2 -> 30:1
+   *   3-2 / 2-3 -> 40:1
+   *   3-3 -> 100:1
+   */
+
+  if (
+    getWinner(
+      outcome
+    ) !== "player" ||
+    getPlayerTotal(
+      outcome
+    ) !== 7 ||
+    getBankerTotal(
+      outcome
+    ) !== 6
+  ) {
+
+    return null;
+  }
+
 
   const playerCards =
     getPlayerCards(
@@ -1589,7 +1615,7 @@ function detectRisingDragon(
   return (
     getWinner(
       outcome
-    ) === "banker" &&
+    ) === "player" &&
     [
       4,
       5,
@@ -1635,7 +1661,7 @@ function detectRisingTiger(
   return (
     getWinner(
       outcome
-    ) === "player" &&
+    ) === "banker" &&
     [
       4,
       5,
