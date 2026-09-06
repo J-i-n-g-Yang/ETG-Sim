@@ -396,6 +396,286 @@ class TestBlackjackIntegration(unittest.TestCase):
         self.assertFalse(insurance["win"])
 
     # ------------------------------------------------------------------
+    # Pontoon Super Bonus
+    # ------------------------------------------------------------------
+
+    def _pontoon_super_bonus_state(
+        self,
+        stake=100.0,
+        *,
+        suits=("S", "S", "S"),
+        dealer_up_rank="7",
+        from_split=False,
+        doubled=False,
+    ):
+        st = self._state(
+            game="pontoon",
+            player=[
+                C("7", suits[0]),
+                C("7", suits[1]),
+                C("7", suits[2]),
+            ],
+            dealer=[
+                C(dealer_up_rank, "H"),
+                C("9", "D"),
+            ],
+            shoe=[
+                C("2", "C"),
+                C("2", "D"),
+                C("2", "H"),
+                C("2", "S"),
+            ],
+            stake=stake,
+            status="stood",
+            extra_hand_fields={
+                "from_split": from_split,
+                "doubled": doubled,
+            },
+        )
+
+        st["initial_cards"]["0"] = [
+            C("7", suits[0]),
+            C("7", suits[1]),
+        ]
+
+        return st
+
+    def _super_bonus_results(self, data):
+        return [
+            result
+            for result in data["results"]
+            if "super_bonus" in result["wager_type"]
+        ]
+
+    def test_pontoon_super_bonus_10_wager_pays_1000(self):
+        st = self._pontoon_super_bonus_state(
+            stake=10,
+        )
+
+        response, data = self.settle(
+            _enc(st)
+        )
+
+        self.assertEqual(
+            response.status_code,
+            200,
+        )
+
+        bonuses = self._super_bonus_results(
+            data
+        )
+
+        self.assertEqual(
+            len(bonuses),
+            1,
+        )
+
+        self.assertEqual(
+            bonuses[0]["wager_type"],
+            "seat0_super_bonus",
+        )
+
+        self.assertEqual(
+            bonuses[0]["return"],
+            1000.0,
+        )
+
+    def test_pontoon_super_bonus_100_wager_pays_5000(self):
+        st = self._pontoon_super_bonus_state(
+            stake=100,
+        )
+
+        response, data = self.settle(
+            _enc(st)
+        )
+
+        self.assertEqual(
+            response.status_code,
+            200,
+        )
+
+        bonuses = self._super_bonus_results(
+            data
+        )
+
+        self.assertEqual(
+            len(bonuses),
+            1,
+        )
+
+        self.assertEqual(
+            bonuses[0]["return"],
+            5000.0,
+        )
+
+    def test_pontoon_super_bonus_pays_50_to_other_original_wager(self):
+        st = self._pontoon_super_bonus_state(
+            stake=100,
+        )
+
+        # Add Seat 1 with an ordinary original Pontoon wager.
+        st["active_seats"] = [
+            0,
+            1,
+        ]
+
+        st["bets_by_seat"]["1"] = {
+            "seat1_main": 25.0,
+        }
+
+        st["hands"]["1"] = [
+            {
+                "cards": [
+                    C("9", "C"),
+                    C("8", "D"),
+                ],
+                "status": "stood",
+                "stake": 25.0,
+                "paid_extra": 0.0,
+                "free_marker": False,
+                "from_split": False,
+                "from_split_aces": False,
+                "split_aces": False,
+                "doubled": False,
+                "surrendered": False,
+                "double_withdrawn": False,
+                "immediate_paid": 0.0,
+            }
+        ]
+
+        st["hand_pos"]["1"] = 0
+        st["free_markers"]["1"] = 0
+
+        st["initial_cards"]["1"] = [
+            C("9", "C"),
+            C("8", "D"),
+        ]
+
+        st["insurance_wagers"]["1"] = 0.0
+        st["insurance_decisions"]["1"] = False
+
+        st["initial_total_wager"] += 25.0
+
+        response, data = self.settle(
+            _enc(st)
+        )
+
+        self.assertEqual(
+            response.status_code,
+            200,
+        )
+
+        bonuses = self._super_bonus_results(
+            data
+        )
+
+        winner_bonus = next(
+            result
+            for result in bonuses
+            if result["wager_type"]
+            ==
+            "seat0_super_bonus"
+        )
+
+        other_bonus = next(
+            result
+            for result in bonuses
+            if result["wager_type"]
+            ==
+            "seat1_super_bonus_50"
+        )
+
+        self.assertEqual(
+            winner_bonus["return"],
+            5000.0,
+        )
+
+        self.assertEqual(
+            other_bonus["return"],
+            50.0,
+        )
+
+        self.assertTrue(
+            other_bonus["win"]
+        )
+
+    def test_pontoon_super_bonus_requires_same_suit(self):
+        st = self._pontoon_super_bonus_state(
+            suits=("S", "H", "D"),
+        )
+
+        response, data = self.settle(
+            _enc(st)
+        )
+
+        self.assertEqual(
+            response.status_code,
+            200,
+        )
+
+        self.assertEqual(
+            self._super_bonus_results(data),
+            [],
+        )
+
+    def test_pontoon_super_bonus_requires_dealer_seven(self):
+        st = self._pontoon_super_bonus_state(
+            dealer_up_rank="6",
+        )
+
+        response, data = self.settle(
+            _enc(st)
+        )
+
+        self.assertEqual(
+            response.status_code,
+            200,
+        )
+
+        self.assertEqual(
+            self._super_bonus_results(data),
+            [],
+        )
+
+    def test_pontoon_super_bonus_rejects_split_hand(self):
+        st = self._pontoon_super_bonus_state(
+            from_split=True,
+        )
+
+        response, data = self.settle(
+            _enc(st)
+        )
+
+        self.assertEqual(
+            response.status_code,
+            200,
+        )
+
+        self.assertEqual(
+            self._super_bonus_results(data),
+            [],
+        )
+
+    def test_pontoon_super_bonus_rejects_doubled_hand(self):
+        st = self._pontoon_super_bonus_state(
+            doubled=True,
+        )
+
+        response, data = self.settle(
+            _enc(st)
+        )
+
+        self.assertEqual(
+            response.status_code,
+            200,
+        )
+
+        self.assertEqual(
+            self._super_bonus_results(data),
+            [],
+        )
+
+    # ------------------------------------------------------------------
     # Pontoon immediate payout accounting
     # ------------------------------------------------------------------
 
