@@ -3821,7 +3821,7 @@ function renderRules() {
 
       "Any Triple pays 31:1.",
 
-      "Totals 4–17: triples do not qualify.",
+      "Three Dice Totals 4–17 also qualify when the outcome is a triple.",
 
       "Single die: 1:1 / 2:1 / 12:1.",
 

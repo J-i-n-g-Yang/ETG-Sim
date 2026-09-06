@@ -76,10 +76,26 @@ class TestSicBo(unittest.TestCase):
                     Decimal("100") * Decimal(str(odds + 1)),
                 )
 
-    def test_total_does_not_qualify_on_triple(self):
-        self.assertEqual(self.ret("total_6", (2, 2, 2)), Decimal("0"))
-        self.assertEqual(self.ret("total_9", (3, 3, 3)), Decimal("0"))
-        self.assertEqual(self.ret("total_12", (4, 4, 4)), Decimal("0"))
+    def test_totals_qualify_on_triples(self):
+        cases = {
+            6: ((2, 2, 2), Decimal("1900")),
+            9: ((3, 3, 3), Decimal("800")),
+            12: ((4, 4, 4), Decimal("800")),
+            15: ((5, 5, 5), Decimal("1900")),
+        }
+
+        for total, (dice, expected) in cases.items():
+            with self.subTest(
+                total=total,
+                dice=dice,
+            ):
+                self.assertEqual(
+                    self.ret(
+                        f"total_{total}",
+                        dice,
+                    ),
+                    expected,
+                )
 
     def test_single_die_one_match_pays_one_to_one(self):
         self.assertEqual(self.ret("single_5", (5, 2, 3)), Decimal("200"))
@@ -105,6 +121,202 @@ class TestSicBo(unittest.TestCase):
     def test_three_from_four_pays_seven_to_one(self):
         self.assertEqual(self.ret("three_from_four_1234", (1, 3, 4)), Decimal("800"))
         self.assertEqual(self.ret("three_from_four_1234", (1, 2, 5)), Decimal("0"))
+
+
+    def test_all_two_dice_combinations(self):
+        for first in range(1, 7):
+            for second in range(first + 1, 7):
+                wager = f"combo_{first}{second}"
+
+                third = next(
+                    n
+                    for n in range(1, 7)
+                    if n not in (first, second)
+                )
+
+                with self.subTest(
+                    wager=wager,
+                ):
+                    self.assertEqual(
+                        self.ret(
+                            wager,
+                            (
+                                first,
+                                second,
+                                third,
+                            ),
+                        ),
+                        Decimal("700"),
+                    )
+
+                    missing = next(
+                        n
+                        for n in range(1, 7)
+                        if n not in (first, second)
+                    )
+
+                    self.assertEqual(
+                        self.ret(
+                            wager,
+                            (
+                                first,
+                                missing,
+                                missing,
+                            ),
+                        ),
+                        Decimal("0"),
+                    )
+
+    def test_all_three_single_combinations(self):
+        for first in range(1, 5):
+            for second in range(first + 1, 6):
+                for third in range(second + 1, 7):
+                    wager = (
+                        f"three_single_"
+                        f"{first}{second}{third}"
+                    )
+
+                    with self.subTest(
+                        wager=wager,
+                    ):
+                        self.assertEqual(
+                            self.ret(
+                                wager,
+                                (
+                                    third,
+                                    first,
+                                    second,
+                                ),
+                            ),
+                            Decimal("3100"),
+                        )
+
+                        replacement = next(
+                            n
+                            for n in range(1, 7)
+                            if n not in (
+                                first,
+                                second,
+                                third,
+                            )
+                        )
+
+                        self.assertEqual(
+                            self.ret(
+                                wager,
+                                (
+                                    first,
+                                    second,
+                                    replacement,
+                                ),
+                            ),
+                            Decimal("0"),
+                        )
+
+    def test_all_double_single_combinations(self):
+        for pair in range(1, 7):
+            for single in range(1, 7):
+                if pair == single:
+                    continue
+
+                wager = (
+                    f"double_single_"
+                    f"{pair}{pair}{single}"
+                )
+
+                with self.subTest(
+                    wager=wager,
+                ):
+                    self.assertEqual(
+                        self.ret(
+                            wager,
+                            (
+                                pair,
+                                single,
+                                pair,
+                            ),
+                        ),
+                        Decimal("5100"),
+                    )
+
+                    self.assertEqual(
+                        self.ret(
+                            wager,
+                            (
+                                pair,
+                                single,
+                                single,
+                            ),
+                        ),
+                        Decimal("0"),
+                    )
+
+    def test_all_approved_three_from_four_groups(self):
+        groups = (
+            "1234",
+            "2345",
+            "2356",
+            "3456",
+        )
+
+        for group in groups:
+            wager = (
+                f"three_from_four_{group}"
+            )
+
+            values = [
+                int(value)
+                for value in group
+            ]
+
+            winning_dice = tuple(
+                values[:3]
+            )
+
+            outside = next(
+                n
+                for n in range(1, 7)
+                if n not in values
+            )
+
+            losing_dice = (
+                values[0],
+                values[1],
+                outside,
+            )
+
+            with self.subTest(
+                wager=wager,
+            ):
+                self.assertEqual(
+                    self.ret(
+                        wager,
+                        winning_dice,
+                    ),
+                    Decimal("800"),
+                )
+
+                self.assertEqual(
+                    self.ret(
+                        wager,
+                        losing_dice,
+                    ),
+                    Decimal("0"),
+                )
+
+                # Repeated values do not satisfy
+                # "three dice from four numbers".
+                self.assertEqual(
+                    self.ret(
+                        wager,
+                        (
+                            values[0],
+                            values[0],
+                            values[1],
+                        ),
+                    ),
+                    Decimal("0"),
+                )
 
     def test_all_wager_ids_are_registered(self):
         self.assertTrue(sicbo.WAGER_TYPES)

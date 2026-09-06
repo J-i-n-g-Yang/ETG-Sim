@@ -110,6 +110,357 @@ class TestGreatFortuneDice(unittest.TestCase):
         self.assertEqual(self.ret("four_from_five_12345", (1, 2, 4, 5)), Decimal("1000"))
         self.assertEqual(self.ret("four_from_five_12345", (1, 2, 5, 6)), Decimal("0"))
 
+    def test_all_specific_doubles(self):
+        for number in range(1, 7):
+            wager = f"specific_double_{number}"
+
+            other = (
+                1
+                if number != 1
+                else 2
+            )
+
+            with self.subTest(
+                wager=wager
+            ):
+                self.assertEqual(
+                    self.ret(
+                        wager,
+                        (
+                            number,
+                            number,
+                            other,
+                            other,
+                        ),
+                    ),
+                    Decimal("700"),
+                )
+
+                # Three matching dice still qualify.
+                self.assertEqual(
+                    self.ret(
+                        wager,
+                        (
+                            number,
+                            number,
+                            number,
+                            other,
+                        ),
+                    ),
+                    Decimal("700"),
+                )
+
+                # Four matching dice still qualify.
+                self.assertEqual(
+                    self.ret(
+                        wager,
+                        (
+                            number,
+                            number,
+                            number,
+                            number,
+                        ),
+                    ),
+                    Decimal("700"),
+                )
+
+    def test_all_specific_triples(self):
+        for number in range(1, 7):
+            wager = f"specific_triple_{number}"
+
+            other = (
+                1
+                if number != 1
+                else 2
+            )
+
+            with self.subTest(
+                wager=wager
+            ):
+                self.assertEqual(
+                    self.ret(
+                        wager,
+                        (
+                            number,
+                            number,
+                            number,
+                            other,
+                        ),
+                    ),
+                    Decimal("5600"),
+                )
+
+                # Four matching dice also qualify.
+                self.assertEqual(
+                    self.ret(
+                        wager,
+                        (
+                            number,
+                            number,
+                            number,
+                            number,
+                        ),
+                    ),
+                    Decimal("5600"),
+                )
+
+    def test_all_specific_quadruples(self):
+        for number in range(1, 7):
+            wager = (
+                f"specific_quadruple_{number}"
+            )
+
+            other = (
+                1
+                if number != 1
+                else 2
+            )
+
+            with self.subTest(
+                wager=wager
+            ):
+                self.assertEqual(
+                    self.ret(
+                        wager,
+                        (
+                            number,
+                            number,
+                            number,
+                            number,
+                        ),
+                    ),
+                    Decimal("100100"),
+                )
+
+                self.assertEqual(
+                    self.ret(
+                        wager,
+                        (
+                            number,
+                            number,
+                            number,
+                            other,
+                        ),
+                    ),
+                    Decimal("0"),
+                )
+
+    def test_all_two_dice_combinations(self):
+        for first in range(1, 7):
+            for second in range(
+                first + 1,
+                7,
+            ):
+                wager = (
+                    f"combo_{first}{second}"
+                )
+
+                filler = next(
+                    number
+                    for number in range(1, 7)
+                    if number not in (
+                        first,
+                        second,
+                    )
+                )
+
+                with self.subTest(
+                    wager=wager
+                ):
+                    self.assertEqual(
+                        self.ret(
+                            wager,
+                            (
+                                first,
+                                second,
+                                filler,
+                                filler,
+                            ),
+                        ),
+                        Decimal("400"),
+                    )
+
+                    self.assertEqual(
+                        self.ret(
+                            wager,
+                            (
+                                first,
+                                filler,
+                                filler,
+                                filler,
+                            ),
+                        ),
+                        Decimal("0"),
+                    )
+
+    def test_all_specific_14_outcomes(self):
+        groups = {
+            "specific14_A": (
+                (
+                    (1, 2, 5, 6),
+                    (1, 3, 4, 6),
+                    (2, 3, 4, 5),
+                ),
+                Decimal("1600"),
+            ),
+            "specific14_B": (
+                (
+                    (1, 3, 5, 5),
+                    (1, 4, 4, 5),
+                    (2, 2, 4, 6),
+                ),
+                Decimal("3100"),
+            ),
+            "specific14_C": (
+                (
+                    (2, 3, 3, 6),
+                    (1, 1, 6, 6),
+                    (2, 2, 5, 5),
+                ),
+                Decimal("4600"),
+            ),
+            "specific14_D": (
+                (
+                    (3, 3, 4, 4),
+                    (2, 4, 4, 4),
+                    (3, 3, 3, 5),
+                ),
+                Decimal("8100"),
+            ),
+        }
+
+        for (
+            wager,
+            (
+                outcomes,
+                expected,
+            ),
+        ) in groups.items():
+
+            for dice in outcomes:
+                with self.subTest(
+                    wager=wager,
+                    dice=dice,
+                ):
+                    self.assertEqual(
+                        self.ret(
+                            wager,
+                            dice,
+                        ),
+                        expected,
+                    )
+
+    def test_all_four_from_five_groups(self):
+        groups = (
+            "12345",
+            "12346",
+            "12356",
+            "12456",
+            "13456",
+            "23456",
+        )
+
+        for group in groups:
+            wager = (
+                f"four_from_five_{group}"
+            )
+
+            values = [
+                int(value)
+                for value in group
+            ]
+
+            winning = tuple(
+                values[:4]
+            )
+
+            outside = next(
+                number
+                for number in range(1, 7)
+                if number not in values
+            )
+
+            losing = (
+                values[0],
+                values[1],
+                values[2],
+                outside,
+            )
+
+            duplicate = (
+                values[0],
+                values[0],
+                values[1],
+                values[2],
+            )
+
+            with self.subTest(
+                wager=wager
+            ):
+                self.assertEqual(
+                    self.ret(
+                        wager,
+                        winning,
+                    ),
+                    Decimal("1000"),
+                )
+
+                self.assertEqual(
+                    self.ret(
+                        wager,
+                        losing,
+                    ),
+                    Decimal("0"),
+                )
+
+                # The five-number section contains
+                # each displayed number once. A
+                # duplicated die therefore cannot
+                # match four of those five numbers.
+                self.assertEqual(
+                    self.ret(
+                        wager,
+                        duplicate,
+                    ),
+                    Decimal("0"),
+                )
+
+    def test_two_pair_accepts_quadruple(self):
+        for number in range(1, 7):
+            with self.subTest(
+                number=number
+            ):
+                self.assertEqual(
+                    self.ret(
+                        "two_pair",
+                        (
+                            number,
+                            number,
+                            number,
+                            number,
+                        ),
+                    ),
+                    Decimal("1200"),
+                )
+
+    def test_small_and_big_include_extreme_quadruples(self):
+        self.assertEqual(
+            self.ret(
+                "small",
+                (1, 1, 1, 1),
+            ),
+            Decimal("200"),
+        )
+
+        self.assertEqual(
+            self.ret(
+                "big",
+                (6, 6, 6, 6),
+            ),
+            Decimal("200"),
+        )
+
+
     def test_all_wager_ids_are_registered(self):
         self.assertTrue(
             gfd.WAGER_TYPES

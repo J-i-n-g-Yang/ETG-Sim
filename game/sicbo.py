@@ -163,7 +163,7 @@ def payout(wager_type: str, amount: Decimal, outcome: dict, choice=None) -> Deci
 
     if wager_type.startswith("total_"):
         t = int(wager_type.split("_")[1])
-        if not is_triple and total == t and t in _TOTAL_PAY:
+        if total == t and t in _TOTAL_PAY:
             return win(_TOTAL_PAY[t])
         return Decimal("0")
 
