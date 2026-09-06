@@ -2908,30 +2908,25 @@ function renderGfdBoard() {
             ${highTotals.join("")}
           </div>
 
-
           <div
             class="
               gfd-fourteen
             "
           >
 
-            <div
-              class="
-                gfd-fourteen-title
-              "
-            >
+            ${betCell(
+              "fourteen",
 
-              <span>
-                1 PAYS 7
-              </span>
+              `
+                <strong>
+                  14
+                </strong>
+              `,
 
-              14
+              "1 PAYS 7",
 
-              <span>
-                1 PAYS 7
-              </span>
-
-            </div>
+              "gfd-fourteen-title"
+            )}
 
 
             <div
@@ -2943,7 +2938,6 @@ function renderGfdBoard() {
             </div>
 
           </div>
-
 
           <div
             class="
