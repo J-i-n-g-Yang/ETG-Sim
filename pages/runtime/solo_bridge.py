@@ -31,6 +31,9 @@ from bridge.common import (
     json_safe,
     runtime_info,
 )
+from bridge.stateless import (
+    solo_spin,
+)
 
 import game.registry as registry
 import game.roulette_engine as roulette_engine
@@ -56,26 +59,6 @@ from game.blackjack_base import (
 # GAME GROUPS
 # ================================================================
 
-STATELESS_GAMES = {
-    # Baccarat
-    "baccarat_dragon_tiger",
-    "baccarat_immortal",
-    "baccarat_rising",
-
-    # Dice
-    "sicbo",
-    "great_fortune_dice",
-
-    # Roulette
-    "roulette_single_zero",
-    "roulette_double_zero",
-    "roulette_sands",
-
-    # Royal Three Pictures
-    "royal_three_pictures",
-}
-
-
 BLACKJACK_GAMES = (
     "blackjack_lucky8",
     "blackjack_freebet",
@@ -97,116 +80,6 @@ BLACKJACK_GAMES = (
 _json_safe = json_safe
 _clean_bets = clean_bets
 
-
-# ================================================================
-# STATELESS SOLO SPIN
-# ================================================================
-
-def solo_spin(
-    payload: dict,
-) -> dict:
-
-    game = str(
-        payload.get(
-            "game",
-            "",
-        )
-    )
-
-    if game not in STATELESS_GAMES:
-
-        raise ValueError(
-            "Game is not available through "
-            f"stateless spin: {game}"
-        )
-
-    bets, total_wager = _clean_bets(
-        game,
-        payload.get(
-            "bets"
-        ),
-    )
-
-    module = registry.get_module(
-        game
-    )
-
-    outcome = module.resolve()
-
-    results = []
-
-    total_return = Decimal(
-        "0"
-    )
-
-    for (
-        wager_type,
-        amount,
-    ) in bets:
-
-        returned = module.payout(
-            wager_type,
-            amount,
-            outcome,
-        )
-
-        returned = Decimal(
-            str(
-                returned
-            )
-        )
-
-        total_return += returned
-
-        results.append(
-            {
-                "wager_type":
-                    wager_type,
-
-                "amount":
-                    float(
-                        amount
-                    ),
-
-                "return":
-                    float(
-                        returned
-                    ),
-
-                "win":
-                    returned >
-                    amount,
-            }
-        )
-
-    return {
-        "game":
-            game,
-
-        "outcome":
-            _json_safe(
-                outcome
-            ),
-
-        "total_wager":
-            float(
-                total_wager
-            ),
-
-        "total_return":
-            float(
-                total_return
-            ),
-
-        "net":
-            float(
-                total_return -
-                total_wager
-            ),
-
-        "results":
-            results,
-    }
 
 # ================================================================
 # STATEFUL CRAPS

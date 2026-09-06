@@ -551,7 +551,7 @@ class PagesBridgeContractTests(
 
 
     # ------------------------------------------------------------
-    # API SHIM ↔ BRIDGE CONTRACT
+    # API SHIM <-> BRIDGE CONTRACT
     # ------------------------------------------------------------
 
     def test_api_shim_operations_exist_in_bridge(self):
@@ -647,14 +647,13 @@ class PagesBridgeContractTests(
         )
 
 
-    def test_common_bridge_runtime_is_installed(self):
+    def test_modular_bridge_runtime_is_installed(self):
 
         """
-        The first modular bridge extraction installs only the shared
-        bridge package.
+        Verify that extracted bridge modules are installed into Pyodide
+        before solo_bridge.py is imported.
 
-        solo_bridge.py remains the public Pyodide entry point while
-        bridge.common provides shared helpers.
+        solo_bridge.py remains the public browser entry point.
         """
 
         runtime = (
@@ -680,6 +679,11 @@ class PagesBridgeContractTests(
         )
 
         self.assertIn(
+            '"bridge/stateless.py"',
+            runtime,
+        )
+
+        self.assertIn(
             "import bridge.common",
             runtime,
         )
@@ -687,6 +691,53 @@ class PagesBridgeContractTests(
         self.assertIn(
             "import solo_bridge",
             runtime,
+        )
+
+
+    # ------------------------------------------------------------
+    # STATELESS EXTRACTION CONTRACT
+    # ------------------------------------------------------------
+
+    def test_stateless_operation_is_extracted(self):
+
+        source = (
+            RUNTIME
+            / "solo_bridge.py"
+        ).read_text(
+            encoding="utf-8"
+        )
+
+        stateless = (
+            RUNTIME
+            / "bridge"
+            / "stateless.py"
+        ).read_text(
+            encoding="utf-8"
+        )
+
+        self.assertIn(
+            "from bridge.stateless import",
+            source,
+        )
+
+        self.assertNotIn(
+            "def solo_spin(",
+            source,
+        )
+
+        self.assertNotIn(
+            "STATELESS_GAMES =",
+            source,
+        )
+
+        self.assertIn(
+            "def solo_spin(",
+            stateless,
+        )
+
+        self.assertIn(
+            "STATELESS_GAMES =",
+            stateless,
         )
 
 

@@ -439,6 +439,7 @@ if "/etg" not in sys.path:
 const BRIDGE_FILES = [
   "bridge/__init__.py",
   "bridge/common.py",
+  "bridge/stateless.py",
 ];
 
 
