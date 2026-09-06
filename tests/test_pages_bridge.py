@@ -694,6 +694,11 @@ class PagesBridgeContractTests(
         )
 
         self.assertIn(
+            '"bridge/royal_three_pictures.py"',
+            runtime,
+        )
+
+        self.assertIn(
             "import bridge.common",
             runtime,
         )
@@ -855,6 +860,53 @@ class PagesBridgeContractTests(
         )
 
 
+    # ------------------------------------------------------------
+    # ROYAL THREE PICTURES EXTRACTION CONTRACT
+    # ------------------------------------------------------------
+
+    def test_royal_three_pictures_operation_is_extracted(self):
+
+        source = (
+            RUNTIME
+            / "solo_bridge.py"
+        ).read_text(
+            encoding="utf-8"
+        )
+
+        royal = (
+            RUNTIME
+            / "bridge"
+            / "royal_three_pictures.py"
+        ).read_text(
+            encoding="utf-8"
+        )
+
+        self.assertIn(
+            "from bridge.royal_three_pictures import",
+            source,
+        )
+
+        self.assertNotIn(
+            "def royal_three_pictures_deal(",
+            source,
+        )
+
+        self.assertNotIn(
+            "import game.royal_three_pictures as royal_three_pictures",
+            source,
+        )
+
+        self.assertIn(
+            "def royal_three_pictures_deal(",
+            royal,
+        )
+
+        self.assertIn(
+            "import game.royal_three_pictures as royal_three_pictures",
+            royal,
+        )
+
+
 # ================================================================
 # MAIN
 # ================================================================
@@ -862,3 +914,4 @@ class PagesBridgeContractTests(
 if __name__ == "__main__":
 
     unittest.main()
+    
