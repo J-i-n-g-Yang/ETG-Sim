@@ -704,6 +704,11 @@ class PagesBridgeContractTests(
         )
 
         self.assertIn(
+            '"bridge/state_token.py"',
+            runtime,
+        )
+
+        self.assertIn(
             "import bridge.common",
             runtime,
         )
@@ -711,6 +716,63 @@ class PagesBridgeContractTests(
         self.assertIn(
             "import solo_bridge",
             runtime,
+        )
+
+
+    # ------------------------------------------------------------
+    # STATE TOKEN EXTRACTION CONTRACT
+    # ------------------------------------------------------------
+
+    def test_state_token_codec_is_extracted(self):
+
+        source = (
+            RUNTIME
+            / "solo_bridge.py"
+        ).read_text(
+            encoding="utf-8"
+        )
+
+        state_token = (
+            RUNTIME
+            / "bridge"
+            / "state_token.py"
+        ).read_text(
+            encoding="utf-8"
+        )
+
+        self.assertIn(
+            "from bridge.state_token import",
+            source,
+        )
+
+        self.assertNotIn(
+            "def _bj_enc(",
+            source,
+        )
+
+        self.assertNotIn(
+            "def _bj_dec(",
+            source,
+        )
+
+        self.assertIn(
+            "_bj_enc = encode_state",
+            source,
+        )
+
+        self.assertIn(
+            "_bj_dec = decode_state",
+            source,
+        )
+
+        self.assertIn(
+            "def encode_state(",
+            state_token,
+        )
+
+        self.assertIn(
+            "def decode_state(",
+            state_token,
         )
 
 
@@ -986,3 +1048,4 @@ class PagesBridgeContractTests(
 if __name__ == "__main__":
 
     unittest.main()
+    

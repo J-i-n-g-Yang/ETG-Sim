@@ -444,6 +444,7 @@ const BRIDGE_FILES = [
   "bridge/roulette.py",
   "bridge/royal_three_pictures.py",
   "bridge/poker.py",
+  "bridge/state_token.py",
 ];
 
 

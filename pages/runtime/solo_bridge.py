@@ -16,7 +16,6 @@ Supported:
 
 from __future__ import annotations
 
-import base64
 import importlib
 import json
 import random
@@ -48,6 +47,10 @@ from bridge.poker import (
     poker_deal,
     poker_action,
     poker_settle,
+)
+from bridge.state_token import (
+    encode_state,
+    decode_state,
 )
 
 import game.registry as registry
@@ -81,7 +84,7 @@ BLACKJACK_GAMES = (
 # ================================================================
 # COMMON BRIDGE COMPATIBILITY
 #
-# Shared implementations now live in bridge.common.
+# Shared implementations now live in bridge modules.
 #
 # Keep the old private names temporarily so the remaining monolithic
 # game-family code does not need to be rewritten during this stage
@@ -91,64 +94,8 @@ BLACKJACK_GAMES = (
 _json_safe = json_safe
 _clean_bets = clean_bets
 
-
-# ================================================================
-# BLACKJACK STATE TOKEN
-# ================================================================
-
-def _bj_enc(
-    state: dict,
-) -> str:
-
-    raw = json.dumps(
-        state,
-        separators=(
-            ",",
-            ":",
-        ),
-    )
-
-    return base64.b64encode(
-        raw.encode()
-    ).decode()
-
-
-def _bj_dec(
-    token: str,
-) -> dict:
-
-    if not token:
-
-        raise ValueError(
-            "Invalid state token"
-        )
-
-    try:
-
-        raw = base64.b64decode(
-            token.encode()
-        ).decode()
-
-        state = json.loads(
-            raw
-        )
-
-    except Exception as exc:
-
-        raise ValueError(
-            "Invalid state token"
-        ) from exc
-
-    if not isinstance(
-        state,
-        dict,
-    ):
-
-        raise ValueError(
-            "Invalid state token"
-        )
-
-    return state
+_bj_enc = encode_state
+_bj_dec = decode_state
 
 
 # ================================================================
